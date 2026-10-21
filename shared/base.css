@@ -1,0 +1,1226 @@
+/*
+ * ═══════════════════════════════════════════════════════════════════
+ *  SAHANI SUITE — BASE DESIGN SYSTEM  v1.0
+ * ═══════════════════════════════════════════════════════════════════
+ *  Shared across: Hub · Budget · Calories · Recipes · Travel · Training
+ *
+ *  HOW TO USE IN A NEW APP
+ *  ───────────────────────
+ *  1. Link this file:  <link rel="stylesheet" href="../shared/base.css">
+ *  2. Override the app theme tokens in a <style> block in your HTML:
+ *       :root {
+ *         --app-primary:   #1a3a1a;
+ *         --app-primary2:  #2a5a2a;
+ *         --app-primary3:  #3a8a3a;
+ *         --app-accent:    #2d7a2d;
+ *         --app-on-primary:  #fff;
+ *         --app-on-primary2: #a8d4a8;
+ *         --app-on-primary3: #7ab87a;
+ *       }
+ *  3. Load shared utilities: <script src="../shared/utils.js"></script>
+ *  4. Load your data:        <script src="../shared/utils.js"></script>
+ *                            then call fetchData('../budget/data.json')
+ *
+ *  LAYER MAP
+ *  ─────────
+ *  §1  Neutral tokens         (never change between apps)
+ *  §2  App theme tokens       (overridden per-app — see above)
+ *  §3  Reset & base
+ *  §4  Layout
+ *  §5  Header
+ *  §6  Cards & hero strips
+ *  §7  Stat / KPI tiles
+ *  §8  Progress bars
+ *  §9  Pills & badges
+ *  §10 Notices
+ *  §11 Legend
+ *  §12 Data table
+ *  §13 Row-item pattern       (budget rows, food rows, recipe steps…)
+ *  §14 Period / year strip
+ *  §15 Chart wrapper
+ *  §16 Horizontal scroll strip
+ *  §17 Privacy mode
+ *  §18 Tooltip
+ *  §19 Password modal
+ *  §20 Navigation helpers
+ *  §21 Utilities
+ *  §22 Bottom-sheet modal forms (ios-* — add/edit record sheets)
+ * ═══════════════════════════════════════════════════════════════════
+ */
+ 
+ 
+/* ── §1  NEUTRAL TOKENS ───────────────────────────────────────────── */
+:root {
+  /* Page surfaces */
+  --bg:       #f5f4f0;
+  --white:    #ffffff;
+  --surface:  #f8f7f3;
+ 
+  /* Text */
+  --text:     #1a1a1a;
+  --muted:    #666666;
+  --faint:    #999999;
+ 
+  /* Borders */
+  --border:   #e0ddd7;
+  --border2:  #e8e6e0;
+ 
+  /* Radii */
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   13px;
+  --r-pill: 999px;
+ 
+  /* Spacing */
+  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;
+  --sp-4: 16px;  --sp-5: 20px;  --sp-6: 24px;
+ 
+  /* Type scale */
+  --t-xs:   9.5px;
+  --t-sm:   11px;
+  --t-base: 13px;
+  --t-md:   14px;
+  --t-lg:   17px;
+  --t-xl:   20px;
+  --t-2xl:  26px;
+ 
+  /* Content layout */
+  --content-max: 1200px;
+  --content-pad: 20px;
+
+  /* Status colours — neutral, never override */
+  --c-success:    #3b6d11;
+  --c-warning:    #ef9f27;
+  --c-danger:     #c0392b;
+  --c-info:       #185fa5;
+  --c-neutral:    #888780;
+  --c-purple:     #7f77dd;
+  --c-teal:       #20a080;
+ 
+  --bg-success:   #e2f0d6;
+  --bg-warning:   #faeeda;
+  --bg-danger:    #fde8e8;
+  --bg-info:      #deeaf7;
+  --bg-neutral:   #f0ede8;
+  --bg-purple:    #eeedfe;
+  --bg-teal:      #e0f5f0;
+}
+ 
+ 
+/* ── §2  APP THEME TOKENS (defaults = Hub navy) ───────────────────── */
+/*
+  Every app overrides these in its own <style> :root block.
+  Naming convention:
+    --app-primary   = darkest  (header bg, hero strip bg)
+    --app-primary2  = mid      (badge bg, footer bg)
+    --app-primary3  = lighter  (badge border, grid lines)
+    --app-accent    = action colour (buttons, progress fill, links)
+    --app-on-primary   = text on primary bg   (almost always #fff)
+    --app-on-primary2  = muted text on primary bg
+    --app-on-primary3  = faint text on primary bg
+*/
+:root {
+  --app-primary:    #0c2340;
+  --app-primary2:   #1a3a5c;
+  --app-primary3:   #2d5a8a;
+  --app-accent:     #185fa5;
+  --app-on-primary:    #ffffff;
+  --app-on-primary2:   #a8cfed;
+  --app-on-primary3:   #7fa8cc;
+}
+ 
+ 
+/* ── §2b DARK THEME ───────────────────────────────────────────────── */
+/*
+  Remaps only the §1 neutral surface/text/border tokens that are
+  guaranteed correct for ANY app in dark mode. Everything else —
+  app-primary/accent colours, status colours (--c-*, --bg-*), and
+  any app-specific semantic aliases — belongs in the app's own
+  [data-theme="dark"] block, because those vary per palette.
+
+  Restore on page load: call restoreTheme() from utils.js, or use the
+  IIFE that ships with it (runs automatically when utils.js is loaded).
+
+  HOW TO USE IN AN APP
+  ─────────────────────
+  1. Add `id="themeToggle"` button to your header — utils.js injects
+     the correct sun/moon SVG on load.
+  2. In your app stylesheet, add a [data-theme="dark"] block that
+     overrides your --app-primary/2/3, --app-accent, --app-on-primary*,
+     any status colours you use, and any app-specific semantic tokens.
+  3. That's it — the neutral surface/text/border tokens below apply
+     automatically via this block.
+*/
+[data-theme="dark"] {
+  /* Page surfaces */
+  --bg:      #0f1117;
+  --white:   #1a1d27;
+  --surface: #1a1d27;
+
+  /* Text */
+  --text:    #e2e8f0;
+  --muted:   #94a3b8;
+  --faint:   #64748b;
+
+  /* Borders */
+  --border:  #2e3455;
+  --border2: #3d4568;
+}
+
+/* Dark mode filter-pill override — base.css's .filter-pill hardcodes
+   white bg / #636366 text, so unselected pills glow on dark surfaces.
+   Using surface/text/border tokens (already remapped above) keeps this
+   correct for any app without needing a per-app override. */
+[data-theme="dark"] .filter-pill {
+  background: var(--white);
+  color: var(--muted);
+  border-color: var(--border2);
+}
+[data-theme="dark"] .filter-pill:hover {
+  border-color: var(--app-accent);
+  color: var(--text);
+}
+[data-theme="dark"] .filter-pill.active {
+  background: color-mix(in srgb, var(--app-accent) 70%, #000 30%);
+  border-color: color-mix(in srgb, var(--app-accent) 70%, #000 30%);
+  color: #fff;
+}
+
+
+/* ── §3  RESET & BASE ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+html { -webkit-text-size-adjust: 100% }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+               Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--t-md);
+  line-height: 1.5;
+  padding-bottom: 48px;
+}
+canvas { display: block; width: 100% !important }
+a { color: var(--app-accent); text-decoration: none }
+a:hover { text-decoration: underline }
+ 
+ 
+/* ── §4  LAYOUT ───────────────────────────────────────────────────── */
+.container { max-width: 480px; margin: 0 auto; padding: 0 14px }
+@media (min-width: 600px)  { .container { padding: 0 20px } }
+@media (min-width: 900px)  { .container { max-width: 860px } }
+@media (min-width: 1200px) { .container { max-width: 1200px } }
+
+/* Wide content area for data-dense apps (dashboards, tables).
+   Pair with .header-inner and .nav-inner so all three share the same
+   column width — see §5 and §20. */
+.main {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--content-pad);
+}
+ 
+/* Wide two-column layout — stacked mobile, side-by-side desktop */
+.layout-wide { display: grid; grid-template-columns: 1fr; gap: var(--sp-4) }
+@media (min-width: 900px) {
+  .layout-wide { grid-template-columns: 1fr 1fr; align-items: start }
+  .layout-wide > .col-full { grid-column: 1 / -1 }
+}
+ 
+/* Dashboard 2-col for mid-sized cards */
+.dash-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+ 
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: var(--sp-2) }
+.grid-3 { display: grid; grid-template-columns: 1fr; gap: var(--sp-2) }
+@media (min-width: 600px) {
+  .grid-2 { grid-template-columns: 1fr 1fr }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr }
+}
+.col-full { grid-column: 1 / -1 }
+ 
+.section-sep { height: 1px; background: var(--border); margin: 8px 0 16px }
+ 
+.sec-lbl {
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: var(--sp-2);
+}
+ 
+ 
+/* ── §5  HEADER ───────────────────────────────────────────────────── */
+/*
+  Usage:
+  <header class="header">
+    <div class="container">
+      <div class="header-row">
+        <div class="header-left">
+          <a class="header-home" href="../index.html">⌂</a>
+          <span class="header-title">App Name</span>
+        </div>
+        <div class="header-right">
+          <button class="privacy-btn" onclick="togglePrivacy()">👁</button>
+          <span class="header-badge">2026</span>
+        </div>
+      </div>
+    </div>
+  </header>
+*/
+.header {
+  background: var(--app-primary);
+  padding: 12px var(--sp-4) 10px;
+  margin-bottom: 14px;
+  position: sticky; top: 0; z-index: 100;
+}
+@media (min-width: 600px) { .header { padding: 13px var(--sp-6) 11px } }
+
+/* Inner wrapper for wide-layout apps — aligns header content to the
+   same --content-max column as .main. Use instead of .container inside
+   .header when the app uses .main for its content area. */
+.header-inner {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-left: var(--content-pad);
+  padding-right: var(--content-pad);
+  box-sizing: border-box;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+ 
+.header-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2); flex-wrap: wrap;
+}
+.header-left  { display: flex; align-items: center; gap: 10px }
+.header-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap }
+ 
+.header-home {
+  color: var(--app-on-primary3); font-size: 18px; line-height: 1;
+  text-decoration: none; transition: color .15s; flex-shrink: 0;
+  padding: 2px 4px;
+  display: inline-flex; /* Ensures icon/text centers inside bounding box */
+  align-items: center;
+  justify-content: center;
+}
+.header-home:hover { color: var(--app-on-primary); text-decoration: none }
+ 
+.header-title {
+  font-size: 17px; font-weight: 600;
+  /*line-height: 1.2;  Normalizes line height across all pages */
+  color: var(--app-on-primary); letter-spacing: -0.3px;
+}
+@media (min-width: 600px) { .header-title { font-size: var(--t-xl) } }
+ 
+.header-badge {
+  padding: 2px 9px;
+  background: var(--app-primary2);
+  border: 1px solid var(--app-primary3);
+  border-radius: var(--r-pill);
+  font-size: 11px; color: var(--app-on-primary2); font-weight: 500;
+}
+ 
+/* Generic icon/text button inside header */
+.header-btn {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: var(--r-sm);
+  color: var(--app-on-primary2);
+  font-size: 11px; font-weight: 500;
+  padding: 2px 10px; cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+.header-btn:hover { background: rgba(255,255,255,.15) }
+.header-btn.active {
+  background: rgba(255,255,255,.2);
+  border-color: rgba(255,255,255,.35);
+  color: var(--app-on-primary);
+}
+ 
+.privacy-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 2px 4px; color: var(--app-on-primary3);
+  font-size: 16px; line-height: 1;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.privacy-btn:hover { color: var(--app-on-primary) }
+
+/* Icon-only header button for SVG icon controls (theme, privacy, home).
+   Use inline SVG with stroke="currentColor" so the icon inherits the
+   button colour. Preferred over .privacy-btn for new apps. */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  padding: 2px 4px;
+  color: var(--app-on-primary3);
+  line-height: 1; text-decoration: none;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover { color: var(--app-on-primary); text-decoration: none }
+ 
+ 
+/* ── §6  CARDS & HERO STRIPS ──────────────────────────────────────── */
+/*
+  .card       — plain white panel
+  .card-hero  — panel with themed hero strip at top
+    .hero-strip — coloured band; inline style="background:var(--app-primary)"
+                  OR pass any hex to allow per-category colour in drill-downs
+    .card-body  — padded content below hero strip
+  .surface    — nested tinted block inside a card
+*/
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.card-hero {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.hero-strip {
+  background: var(--app-primary);
+  padding: 14px var(--sp-4) 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+.card-body { padding: var(--sp-3) 14px }
+.surface   { background: var(--surface); border-radius: var(--r-md); padding: 10px 12px }
+ 
+/* Hero strip typography */
+.hs-title { font-size: var(--t-lg); font-weight: 600; color: var(--app-on-primary) }
+.hs-sub   { font-size: 11px; color: var(--app-on-primary2); margin-top: 2px }
+.hs-right { text-align: right; flex-shrink: 0 }
+.hs-stat  { font-size: var(--t-2xl); font-weight: 600; color: var(--app-on-primary); line-height: 1 }
+.hs-lbl   { font-size: 10px; color: var(--app-on-primary3); margin-top: 2px }
+ 
+ 
+/* ── §7  STAT / KPI TILES ─────────────────────────────────────────── */
+/*
+  Usage:
+  <div class="kpi-tile">
+    <div class="kpi-label">Total Spend</div>
+    <div class="kpi-value">CHF 42,300</div>
+    <div class="kpi-sub">of CHF 50,000 budget</div>
+  </div>
+*/
+.kpi-tile  {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 10px 12px;
+}
+.kpi-label { font-size: var(--t-xs); font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px }
+.kpi-value { font-size: var(--t-2xl); font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 3px }
+.kpi-sub   { font-size: 11px; color: var(--muted) }
+ 
+/* Compact inline stat — e.g. inside a hero strip */
+.kpi-inline       { display: flex; align-items: baseline; gap: 6px }
+.kpi-inline-value { font-size: var(--t-xl); font-weight: 600; color: var(--app-on-primary) }
+.kpi-inline-label { font-size: 10px; color: var(--app-on-primary3) }
+ 
+ 
+/* ── §8  PROGRESS BARS ────────────────────────────────────────────── */
+/*
+  Usage:
+  <div class="progress-wrap">
+    <div class="progress-bg h-md">
+      <div class="progress-fill fill-accent" style="width:72%"></div>
+    </div>
+  </div>
+  Heights:  (default 3px)  .h-sm=3px  .h-md=6px  .h-lg=10px
+  Fills:    .fill-accent (uses app theme) | .fill-success | .fill-warning
+            .fill-danger | .fill-neutral | .fill-purple | .fill-teal
+*/
+.progress-wrap    { padding-bottom: 8px }
+.progress-bg      { height: 3px; border-radius: 2px; background: #f0ede8; overflow: hidden }
+.progress-bg.h-sm { height: 3px }
+.progress-bg.h-md { height: 6px }
+.progress-bg.h-lg { height: 10px }
+.progress-fill    { height: 100%; border-radius: 2px; transition: width .3s ease }
+ 
+.fill-accent   { background: var(--app-accent) }
+.fill-success  { background: var(--c-success) }
+.fill-warning  { background: var(--c-warning) }
+.fill-danger   { background: var(--c-danger) }
+.fill-neutral  { background: var(--c-neutral) }
+.fill-purple   { background: var(--c-purple) }
+.fill-teal     { background: var(--c-teal) }
+ 
+ 
+/* ── §9  PILLS & BADGES ───────────────────────────────────────────── */
+/*
+  .pill  — smallest inline label (8px, uppercase weight)
+  .badge — slightly larger, for counts or ownership labels
+  .tag   — plain inline text chip
+ 
+  Pill variants: status (reuse in any domain)
+    .pill-success .pill-warning .pill-danger .pill-info .pill-neutral .pill-purple .pill-teal
+  Badge variants:
+    .badge-accent .badge-neutral
+*/
+.pill {
+  display: inline-block; font-size: 8px; font-weight: 600;
+  padding: 1.5px 5px; border-radius: var(--r-pill); width: fit-content;
+}
+.pill-success { background: var(--bg-success); color: var(--c-success) }
+.pill-warning { background: var(--bg-warning); color: #633806 }
+.pill-danger  { background: var(--bg-danger);  color: #7c0c0c }
+.pill-info    { background: var(--bg-info);    color: #0c447c }
+.pill-neutral { background: var(--bg-neutral); color: #666 }
+.pill-purple  { background: var(--bg-purple);  color: #3c3489 }
+.pill-teal    { background: var(--bg-teal);    color: #0a5040 }
+/* App-accent pill — uses current app theme */
+.pill-accent  { background: var(--app-primary2); color: var(--app-on-primary2) }
+ 
+.badge {
+  display: inline-block; font-size: 9px; font-weight: 600;
+  padding: 1px 7px; border-radius: var(--r-pill); margin-top: 4px;
+}
+.badge-accent  { background: var(--app-primary2); color: var(--app-on-primary2) }
+.badge-neutral { background: var(--bg-neutral); color: var(--muted) }
+ 
+.tag {
+  display: inline-block; font-size: 9px;
+  padding: 1px 6px; border-radius: var(--r-pill);
+  background: var(--bg-neutral); color: #555;
+}
+.tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px }
+ 
+ 
+/* ── §10 NOTICES ──────────────────────────────────────────────────── */
+/*
+  Usage:
+  <div class="notice notice-info">
+    <div class="notice-title">Heads up</div>
+    <div class="notice-body">Some contextual information.</div>
+  </div>
+  Variants: .notice-success .notice-info .notice-warning .notice-danger
+*/
+.notice       { border-radius: 9px; padding: 9px 11px; margin-bottom: var(--sp-2) }
+.notice-title { font-size: var(--t-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px }
+.notice-body  { font-size: 10px; line-height: 1.5 }
+ 
+.notice-success { background: #f0fff4; border: 1px solid #80d090 }
+.notice-success .notice-title { color: #256030 }
+.notice-success .notice-body  { color: #1a4020 }
+ 
+.notice-info    { background: #fff8e8; border: 1px solid #f0d890 }
+.notice-info .notice-title    { color: #8a6000 }
+.notice-info .notice-body     { color: #6a4800 }
+ 
+.notice-warning { background: #fff4ec; border: 1px solid #f0c080 }
+.notice-warning .notice-title { color: #8a4000 }
+.notice-warning .notice-body  { color: #6a3000 }
+ 
+.notice-danger  { background: #fff0f0; border: 1px solid #f0a0a0 }
+.notice-danger .notice-title  { color: #8a0000 }
+.notice-danger .notice-body   { color: #6a0000 }
+ 
+ 
+/* ── §11 LEGEND ───────────────────────────────────────────────────── */
+/*
+  Usage:
+  <div class="legend">
+    <div class="legend-item" onclick="...">
+      <div class="legend-dot" style="background:#185fa5"></div>
+      Series name
+    </div>
+  </div>
+*/
+.legend      { display: flex; gap: 10px; flex-wrap: wrap; padding: 8px 12px; background: var(--white); border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: 14px }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #555; cursor: pointer; user-select: none }
+.legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0 }
+ 
+ 
+/* ── §12 DATA TABLE ───────────────────────────────────────────────── */
+/*
+  Horizontally scrollable, sticky first column + header.
+  Usage:
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>2026</th>...</tr></thead>
+        <tbody><tr><td>Row</td><td class="num-private">5.2k</td>...</tr></tbody>
+        <tfoot><tr><td>Total</td><td class="num-private">42k</td>...</tr></tfoot>
+      </table>
+    </div>
+  </div>
+*/
+.table-wrap  { overflow-x: auto; -webkit-overflow-scrolling: touch }
+.data-table  { width: 100%; border-collapse: collapse; font-size: var(--t-sm); white-space: nowrap }
+ 
+.data-table th {
+  background: var(--app-primary); color: var(--app-on-primary);
+  padding: 6px 10px; text-align: right;
+  font-weight: 600; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .05em;
+  position: sticky; top: 0;
+}
+.data-table th:first-child { text-align: left; position: sticky; left: 0; z-index: 2 }
+ 
+.data-table td {
+  padding: 5px 10px; text-align: right;
+  border-bottom: 1px solid var(--border2); color: var(--text);
+}
+.data-table td:first-child {
+  text-align: left; font-weight: 600;
+  background: var(--white); position: sticky; left: 0;
+  border-right: 1px solid var(--border);
+}
+.data-table tr:nth-child(even) td              { background: var(--surface) }
+.data-table tr:nth-child(even) td:first-child  { background: var(--surface) }
+ 
+.data-table tfoot td {
+  font-weight: 600;
+  background: var(--app-primary2); color: var(--app-on-primary);
+  border-top: 2px solid var(--app-primary3);
+}
+.data-table tfoot td:first-child { background: var(--app-primary2) }
+ 
+ 
+/* ── §13 ROW-ITEM PATTERN ─────────────────────────────────────────── */
+/*
+  Generic horizontal row with dot/icon, label, values, progress bar.
+  Works for: budget categories, food items, recipe ingredients, lap splits…
+ 
+  Usage:
+  <div class="row-item">
+    <div class="ri-header" onclick="...">     ← optional click for drill-down
+      <div class="ri-left">
+        <div class="ri-dot" style="background:#2d7a2d"></div>
+        <span class="ri-name">Groceries</span>
+      </div>
+      <div class="ri-right">
+        <span class="ri-value num-private">CHF 1,200</span>
+        <span class="ri-meta num-private">/ 1,500</span>
+        <span class="pill pill-success num-private">–300</span>
+        <span class="ri-caret">›</span>
+      </div>
+    </div>
+    <div class="progress-bg h-md">
+      <div class="progress-fill fill-accent" style="width:80%"></div>
+    </div>
+  </div>
+*/
+.row-item    { margin-bottom: 12px }
+.ri-header   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 8px }
+.ri-header.clickable { cursor: pointer }
+.ri-left     { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0 }
+.ri-right    { display: flex; gap: 8px; align-items: center; flex-shrink: 0 }
+.ri-dot      { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0 }
+.ri-icon     { font-size: 14px; flex-shrink: 0 }
+.ri-name     { font-size: var(--t-sm); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.ri-value    { font-size: var(--t-sm); font-weight: 600; color: var(--text) }
+.ri-meta     { font-size: var(--t-sm); color: var(--muted) }
+.ri-caret    { font-size: 9px; color: var(--app-accent) }
+ 
+/* Detail block — expanded content below a row-item or inside a card */
+.detail-block  { background: var(--surface); border-radius: var(--r-md); padding: 10px 12px; margin-bottom: 8px }
+.db-header     { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px }
+.db-title      { font-size: var(--t-sm); font-weight: 600; color: var(--text) }
+.db-meta       { font-size: 11px; color: var(--muted) }
+.db-body       { font-size: 11px; color: #555; line-height: 1.5 }
+.db-footer     { font-size: 10px; color: var(--faint); margin-top: 4px }
+ 
+ 
+/* ── §14 PERIOD / YEAR STRIP ──────────────────────────────────────── */
+/*
+  Pill row for year, week, or any period selector.
+  Usage: <div class="period-strip" id="periodStrip"></div>
+  Rendered by renderPeriodStrip() in utils.js
+*/
+.period-strip { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 14px }
+.period-btn {
+  font-size: 10px; font-weight: 600; padding: 3px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--white); color: var(--muted);
+  cursor: pointer; font-family: inherit;
+  transition: all .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.period-btn:hover        { border-color: #bbb; color: var(--text) }
+.period-btn.active       { background: var(--app-primary); border-color: var(--app-primary); color: var(--app-on-primary) }
+ 
+ 
+/* ── §15 CHART WRAPPER ────────────────────────────────────────────── */
+.chart-wrap { width: 100%; overflow: hidden }
+ 
+ 
+/* ── §16 HORIZONTAL SCROLL STRIP ─────────────────────────────────── */
+/*
+  Mobile: horizontal scroll. Desktop: auto-grid.
+  Usage:
+  <div class="hscroll-wrap">
+    <div class="hscroll-inner">
+      <div class="scroll-card sel">
+        <div class="sc-label">Mon</div>
+        <div class="sc-value">4.2k</div>
+        <div class="sc-meta">kcal</div>
+      </div>
+    </div>
+  </div>
+*/
+.hscroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin: 0 -14px 14px; padding: 4px 14px 8px }
+.hscroll-wrap::-webkit-scrollbar { display: none }
+.hscroll-inner { display: flex; gap: 6px; width: max-content }
+@media (min-width: 600px) {
+  .hscroll-wrap  { overflow: visible; margin: 0 0 14px; padding: 3px 0 6px }
+  .hscroll-inner { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px,1fr)); width: auto }
+}
+.scroll-card {
+  min-width: 80px; flex-shrink: 0;
+  border: 1.5px solid var(--border); border-radius: 11px;
+  padding: 9px 8px 8px; background: var(--white);
+  cursor: pointer; display: flex; flex-direction: column;
+  min-height: 80px; transition: border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.scroll-card:hover { border-color: #bbb }
+.scroll-card.sel   { border-color: var(--app-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-accent) 20%, transparent) }
+.sc-label { font-size: var(--t-xs); font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px }
+.sc-value { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px }
+.sc-meta  { font-size: 9px; color: var(--faint); flex: 1 }
+ 
+ 
+/* ── §17 PRIVACY MODE ─────────────────────────────────────────────── */
+/*
+  Add class="privacy" to <body> to blur all .num-private elements.
+  Controlled by togglePrivacy() in utils.js.
+*/
+body.privacy .num-private {
+  filter: blur(10px);
+  user-select: none;
+  pointer-events: none;
+  transition: filter .2s;
+}
+ 
+ 
+/* ── §18 TOOLTIP ──────────────────────────────────────────────────── */
+/*
+  One shared <div id="chartTooltip"></div> placed as direct child of <body>.
+  Controlled by showTT() / hideTT() in utils.js.
+  Suppressed automatically when privacy mode is on.
+*/
+#chartTooltip {
+  position: fixed; pointer-events: none;
+  background: var(--app-primary); color: var(--app-on-primary);
+  border: 1px solid var(--app-primary3);
+  border-radius: var(--r-md);
+  padding: 7px 10px; font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  z-index: 9999; opacity: 0; transition: opacity .1s;
+  white-space: nowrap; line-height: 1.6;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+#chartTooltip.visible { opacity: 1 }
+#chartTooltip .tt-title { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--app-on-primary3); margin-bottom: 4px }
+#chartTooltip .tt-row   { display: flex; gap: 8px; align-items: center; justify-content: space-between }
+#chartTooltip .tt-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0 }
+#chartTooltip .tt-label { color: var(--app-on-primary2); flex: 1 }
+#chartTooltip .tt-val   { font-weight: 600; color: var(--app-on-primary) }
+ 
+ 
+/* ── §19 PASSWORD MODAL ───────────────────────────────────────────── */
+/*
+  Injected into <body> by showPasswordModal() in utils.js.
+*/
+.pw-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(3px);
+  z-index: 10000; display: flex;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.pw-modal {
+  background: var(--white); border-radius: var(--r-lg);
+  padding: 24px 20px; width: 100%; max-width: 320px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.25);
+}
+.pw-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px }
+.pw-sub   { font-size: 11px; color: var(--muted); margin-bottom: 16px }
+.pw-input {
+  width: 100%; border: 1.5px solid var(--border);
+  border-radius: var(--r-md); padding: 9px 12px;
+  font-size: 14px; font-family: inherit; color: var(--text);
+  outline: none; transition: border-color .15s; letter-spacing: .1em;
+}
+.pw-input:focus { border-color: var(--app-accent) }
+.pw-input.shake { animation: shake .3s }
+.pw-error { font-size: 11px; color: var(--c-danger); margin-top: 6px; min-height: 16px }
+.pw-actions { display: flex; gap: 8px; margin-top: 16px }
+.pw-btn {
+  flex: 1; padding: 8px; border-radius: var(--r-md);
+  font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all .15s; border: none;
+}
+.pw-btn-cancel  { background: var(--surface); border: 1px solid var(--border); color: var(--muted) }
+.pw-btn-cancel:hover  { border-color: #bbb; color: var(--text) }
+.pw-btn-confirm { background: var(--app-primary); color: var(--app-on-primary) }
+.pw-btn-confirm:hover { background: var(--app-primary2) }
+ 
+@keyframes shake {
+  0%,100% { transform: translateX(0) }
+  25%      { transform: translateX(-6px) }
+  75%      { transform: translateX(6px) }
+}
+ 
+ 
+/* ── §20 NAVIGATION HELPERS ───────────────────────────────────────── */
+.back-btn {
+  font-size: 11px; font-weight: 600; padding: 3px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--white); color: var(--muted);
+  cursor: pointer; font-family: inherit;
+  margin-bottom: 12px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.back-btn:hover { border-color: var(--app-accent); color: var(--app-accent) }
+ 
+/* ── App tab nav — sticky bar below the header ── */
+/*
+  Usage:
+  <nav class="app-nav">
+    <button class="nav-btn active" onclick="showTab('overview',this)">📊 Overview</button>
+    <button class="nav-btn" onclick="showTab('detail',this)">📋 Detail</button>
+  </nav>
+  .tab-panel { display:none } .tab-panel.active { display:block }
+*/
+.app-nav {
+  background: var(--app-primary);
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  position: sticky; top: 46px; z-index: 90;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.app-nav::-webkit-scrollbar { display: none }
+
+/* Inner wrapper for wide-layout apps — aligns nav tabs to the same
+   --content-max column as .main and .header-inner. */
+.nav-inner {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-left: var(--content-pad);
+  padding-right: var(--content-pad);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.nav-inner > .nav-btn:first-child { padding-left: 0 }
+
+/* Year/period strip inner wrapper — same alignment as .nav-inner. */
+.year-strip-inner {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-left: var(--content-pad);
+  padding-right: var(--content-pad);
+  box-sizing: border-box;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  background: none; border: none;
+  padding: 11px 18px;
+  color: var(--app-on-primary2);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  cursor: pointer; font-family: inherit;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap; flex-shrink: 0;
+  transition: color .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-btn:hover  { color: var(--app-on-primary) }
+.nav-btn.active { color: #fff; border-bottom-color: var(--app-accent) }
+ 
+.tab-panel          { display: none; padding-top: 16px }
+.tab-panel.active   { display: block }
+ 
+/* ── Hub app grid — used on the homepage only ── */
+.app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px }
+@media (min-width: 600px) { .app-grid { grid-template-columns: repeat(3, 1fr) } }
+@media (min-width: 900px) { .app-grid { grid-template-columns: repeat(5, 1fr) } }
+ 
+.app-card {
+  border-radius: var(--r-lg); overflow: hidden;
+  border: 1px solid var(--border);
+  text-decoration: none; display: block;
+  transition: transform .15s, box-shadow .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); text-decoration: none }
+.app-card-header {
+  padding: 14px 14px 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.app-card-icon  { font-size: 22px; line-height: 1 }
+.app-card-title { font-size: 13px; font-weight: 600; color: var(--app-on-primary) }
+.app-card-sub   { font-size: 10px; color: var(--app-on-primary2) }
+.app-card-body  { background: var(--white); padding: 8px 14px 10px }
+.app-card-stat  { font-size: 11px; color: var(--muted) }
+ 
+/* ── Trip / upcoming cards — horizontal scroll strip ── */
+/*
+  Used by travel planner upcoming strip.
+  <div class="trip-strip">
+    <div class="trip-chip" style="--chip-color:#ef5350">...</div>
+  </div>
+*/
+.trip-strip {
+  display: flex; gap: 10px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  padding: 2px 0 14px; margin: 0 -14px; padding-left: 14px;
+  scroll-snap-type: x mandatory;
+}
+.trip-strip::-webkit-scrollbar { display: none }
+@media (min-width: 900px) {
+  .trip-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    overflow: visible; margin: 0; padding: 0 0 14px;
+  }
+}
+ 
+.trip-chip {
+  flex-shrink: 0; scroll-snap-align: start;
+  width: 170px;
+  background: var(--white); border: 1px solid var(--border);
+  border-top: 4px solid var(--chip-color, var(--app-accent));
+  border-radius: var(--r-lg); padding: 12px 14px;
+  cursor: pointer; transition: box-shadow .2s, transform .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.trip-chip:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.08) }
+@media (min-width: 900px) { .trip-chip { width: auto } }
+ 
+.tc-days       { font-size: 28px; font-weight: 900; letter-spacing: -1px; line-height: 1; color: var(--chip-color, var(--app-accent)) }
+.tc-days-lbl   { font-size: 9px; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: .05em; margin-top: 1px }
+.tc-dest       { font-size: 12px; font-weight: 800; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.tc-dates      { font-size: 10px; color: var(--muted); margin-top: 2px }
+.tc-type-pill  {
+  display: inline-block; margin-top: 8px;
+  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  padding: 2px 7px; border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--chip-color, var(--app-accent)) 12%, transparent);
+  color: var(--chip-color, var(--app-accent));
+}
+ 
+/* ── Status pills (shared: travel, training) ── */
+.status-pill {
+  display: inline-block; font-size: 9px; font-weight: 800;
+  padding: 2px 8px; border-radius: var(--r-pill);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.status-confirmed { background: var(--bg-success); color: var(--c-success) }
+.status-planned   { background: var(--bg-info);    color: var(--c-info) }
+.status-tbc       { background: var(--bg-neutral);  color: var(--c-neutral) }
+.status-completed { background: var(--bg-neutral);  color: var(--c-neutral) }
+ 
+ 
+/* ── §21 UTILITIES ────────────────────────────────────────────────── */
+.flex         { display: flex }
+.flex-between { display: flex; align-items: center; justify-content: space-between }
+.flex-center  { display: flex; align-items: center; justify-content: center }
+.flex-wrap    { flex-wrap: wrap }
+.text-muted   { color: var(--muted) }
+.text-faint   { color: var(--faint) }
+.text-accent  { color: var(--app-accent) }
+.text-success { color: var(--c-success) }
+.text-danger  { color: var(--c-danger) }
+.fw-500       { font-weight: 500 }
+.fw-600       { font-weight: 600 }
+.mt-2 { margin-top: var(--sp-2) }   .mt-3 { margin-top: var(--sp-3) }
+.mb-2 { margin-bottom: var(--sp-2) } .mb-3 { margin-bottom: var(--sp-3) }
+.gap-2 { gap: var(--sp-2) }          .gap-3 { gap: var(--sp-3) }
+.w-full { width: 100% }
+ 
+/* Dashboard section headers — EAT | RUN | LIVE */
+.dash-section { margin-bottom: 28px }
+.dash-section-title { font-size: var(--t-lg); font-weight: 700; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px }
+.dash-grid { display: grid; grid-template-columns: 1fr; gap: 10px }
+@media (min-width: 600px) { .dash-grid { grid-template-columns: 1fr 1fr } }
+ 
+/* Day tiles for week view */
+.day-tile { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-lg); padding: 12px 14px; cursor: pointer; transition: all .15s; -webkit-tap-highlight-color: transparent }
+.day-tile:hover { border-color: var(--app-accent); box-shadow: 0 2px 8px rgba(0,0,0,.08) }
+.day-tile.today { border-color: var(--app-accent); background: color-mix(in srgb, var(--app-accent) 5%, var(--white)) }
+.day-tile-date { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transform: uppercase }
+.day-tile-label { font-size: var(--t-base); font-weight: 600; color: var(--text); margin: 4px 0 }
+.day-tile-stat { font-size: var(--t-sm); color: var(--app-accent); font-weight: 500 }
+ 
+/* Summary stat blocks (compact for dashboard) */
+.sum-stat { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: var(--t-sm) }
+.sum-stat-icon { font-size: 16px; margin-top: 1px }
+.sum-stat-content { flex: 1 }
+.sum-stat-label { color: var(--muted); font-size: 11px }
+.sum-stat-value { color: var(--text); font-weight: 600 }
+ 
+/* Quick list for dashboard items */
+.quick-list { list-style: none }
+.quick-list-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: var(--t-sm); border-bottom: 1px solid var(--border2) }
+.quick-list-item:last-child { border-bottom: none }
+.quick-list-emoji { font-size: 16px; min-width: 20px }
+.quick-list-label { color: var(--text); flex: 1 }
+.quick-list-value { color: var(--app-accent); font-weight: 600 }
+ 
+/* ── §22 BOTTOM-SHEET MODAL FORMS (ios-*) ─────────────────────────────
+   A full-screen "Add / Edit" sheet that slides up from the bottom, for
+   any app that needs a record-editing form. First built for travel-
+   planner's item/stage/trip forms; any app can reuse the same markup
+   for its own add/edit modals (a budget transaction, a recipe, etc).
+ 
+   Typical markup:
+     <div class="ios-overlay" id="iosOverlay">
+       <div class="ios-sheet" id="iosSheet">
+         <div class="ios-nav-bar">
+           <button class="ios-link-btn" onclick="...">Cancel</button>
+           <div class="ios-nav-title">Edit Thing</div>
+           <button class="ios-link-btn bold" onclick="...">Done</button>
+         </div>
+         <div class="ios-sheet-body">
+           <div class="ios-group-title">Section</div>
+           <div class="ios-group">
+             <div class="ios-row">
+               <label class="ios-label">Field</label>
+               <input class="ios-input">
+             </div>
+             <div class="ios-row ios-row-between">
+               <label class="ios-label">Toggle</label>
+               <label class="ios-switch">
+                 <input type="checkbox"><span class="ios-slider"></span>
+               </label>
+             </div>
+           </div>
+           <div class="ios-danger-block">
+             <button class="ios-link-btn danger bold ios-danger-btn">Remove</button>
+           </div>
+         </div>
+       </div>
+     </div>
+ 
+   Note: travel-planner's own .status-badge component (status-booked /
+   -planned / -confirmed / -not-booked / -completed etc.) deliberately
+   stayed local rather than moving here — its modifier class names
+   collide with the existing §9 .status-pill modifiers above, which
+   use different colours. Worth reconciling the two systems on
+   purpose later rather than silently merging them. */
+.ios-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); justify-content: center; align-items: flex-start; }
+.ios-sheet { background: #f2f2f7; width: 100%; max-width: 540px; height: 94vh; margin-top: 6vh; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 -8px 30px rgba(0,0,0,0.15); animation: iosSheetSlideUp 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94); }
+@keyframes iosSheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+ 
+.ios-nav-bar { background: #ffffff; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #c6c6c8; flex-shrink: 0; }
+.ios-nav-title { font-size: 16px; font-weight: 600; color: #1c1c1e; text-align: center; flex-grow: 1; margin: 0 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ios-link-btn { background: none; border: none; font-size: 16px; color: var(--app-accent); cursor: pointer; padding: 0; font-weight: 400; -webkit-tap-highlight-color: transparent; }
+.ios-link-btn.bold { font-weight: 600; }
+.ios-link-btn.danger { color: var(--app-destructive, #ff3b30); }
+ 
+.ios-sheet-body { flex-grow: 1; overflow-y: auto; padding: 0 16px 30px 16px; -webkit-overflow-scrolling: touch; }
+ 
+.ios-group-title { font-size: 12px; font-weight: 400; color: #6c6c70; text-transform: uppercase; margin: 18px 0 6px 8px; letter-spacing: 0.3px; }
+.ios-group { background: #ffffff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.ios-row { display: flex; align-items: center; padding: 12px 14px; border-bottom: 1px solid #e5e5ea; position: relative; gap: 10px; background: #ffffff; }
+.ios-row:last-child { border-bottom: none; }
+.ios-row-between { justify-content: space-between; }
+.ios-row.vertical { flex-direction: column; align-items: flex-start; }
+.ios-row.vertical .ios-label { margin-bottom: 6px; }
+.ios-label { font-size: 15px; color: #1c1c1e; min-width: 95px; flex-shrink: 0; }
+.ios-input, .ios-select, .ios-textarea { flex-grow: 1; border: none; background: none; font-size: 15px; color: #1c1c1e; padding: 0; font-family: inherit; width: 100%; text-align: right; outline: none; }
+.ios-select { appearance: none; color: #8e8e93; direction: rtl; cursor: pointer; }
+.ios-textarea { text-align: left; resize: none; min-height: 70px; padding-top: 4px; }
+ 
+.ios-switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+.ios-switch input { opacity: 0; width: 0; height: 0; }
+.ios-slider { position: absolute; cursor: pointer; inset: 0; background-color: #e5e5ea; transition: background-color .2s cubic-bezier(0.1, 0.76, 0.55, 0.94); border-radius: 26px; }
+.ios-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 2px; bottom: 2px; background-color: white; transition: transform .2s cubic-bezier(0.1, 0.76, 0.55, 0.94); border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+input:checked + .ios-slider { background-color: #34c759; }
+input:checked + .ios-slider:before { transform: translateX(20px); }
+ 
+.ios-danger-block { margin-top: 24px; padding: 0 8px; }
+.ios-danger-btn { width: 100%; text-align: center; background: white; padding: 12px; border-radius: 10px; border: 1px solid #e5e5ea; }
+ 
+/* ── Neutral filter pill (e.g. a library/category filter strip) ── */
+.filter-pill-bar { display: flex; gap: 6px; padding: 0 0 10px; overflow-x: auto; scrollbar-width: none; }
+.filter-pill-bar::-webkit-scrollbar { display: none; }
+.filter-pill { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1.5px solid #e5e5ea; background: #fff; color: #636366; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+.filter-pill.active { background: var(--app-accent); color: #fff; border-color: var(--app-accent); }
+ 
+/* ─────────────────────────────────────────────────────────────────────
+   PATCH FOR base.css
+   Insert as new §23 and §24, after the existing §22 ios-* modal block
+   (i.e. after the .filter-pill / .filter-pill.active rules at the very
+   end of the file). These three patterns were built fresh by Gemini for
+   the Via Alpina shopping list; promoting them here makes them available
+   to any future app rather than re-invented per-app.
+   ───────────────────────────────────────────────────────────────────── */
+ 
+ 
+/* ── §23 GENERIC BUTTONS (.btn) ───────────────────────────────────────
+   A small button system distinct from the single-purpose buttons that
+   already exist (.header-btn, .period-btn, .pw-btn, .back-btn). Use
+   .btn for any general-purpose action button outside those contexts —
+   form submits, toolbar actions, modal actions, etc.
+ 
+   Usage:
+   <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add</button>
+   <button class="btn btn-secondary">Cancel</button>
+   <button class="btn btn-danger">Delete</button>
+*/
+.btn {
+  padding: 6px 12px;
+  border-radius: var(--r-md);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary   { background: var(--app-accent); color: #fff }
+.btn-primary:hover   { opacity: .9 }
+.btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--muted) }
+.btn-secondary:hover { border-color: #bbb; color: var(--text) }
+.btn-danger    { background: var(--bg-danger); color: var(--c-danger) }
+.btn-danger:hover    { background: #fcdad7 }
+ 
+ 
+/* ── §24 CENTERED MODAL (.modal-*) ────────────────────────────────────
+   A centered dialog box — distinct from the §22 .ios-* bottom sheet.
+   Use .ios-* for full-screen mobile-style add/edit forms; use .modal-*
+   for smaller, desktop-friendly confirms, option panels, or short forms
+   that don't need the full-screen treatment.
+ 
+   Usage:
+   <div class="modal-overlay" id="myModal" onclick="closeOnBackdrop(event)">
+     <div class="modal-box" onclick="event.stopPropagation()">
+       <div class="modal-header">
+         <span class="profile-title">Title</span>
+         <button class="btn btn-secondary" onclick="closeMyModal()">✕</button>
+       </div>
+       <div class="modal-body">...</div>
+     </div>
+   </div>
+   JS: el.style.display = 'flex' to open, 'none' to close (default display: none)
+*/
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(12, 35, 64, 0.5);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 2000; padding: 16px;
+}
+.modal-box {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  width: 100%; max-width: 550px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.15);
+  animation: modalSlideIn .2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.modal-header {
+  background: var(--surface);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-body { padding: 16px }
+@keyframes modalSlideIn {
+  from { transform: translateY(12px); opacity: 0 }
+  to   { transform: translateY(0); opacity: 1 }
+}
+ 
+ 
+/* ── §25 GENERIC INPUT (.input-field) ─────────────────────────────────
+   A plain text input/select/textarea style, for forms outside the
+   §22 .ios-* sheet system (which has its own .ios-input convention).
+   Use .input-field for forms inside .modal-box or standalone cards.
+ 
+   Usage: <input class="input-field" type="text" placeholder="...">
+*/
+.input-field {
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  font-size: var(--t-base);
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+.input-field:focus { border-color: var(--app-accent) }
+ 
+ 
+/* ── §26 COLLAPSIBLE CATEGORY HEADER (.category-*) ────────────────────
+   A clickable section header with a progress meter underneath —
+   for any app that groups items into collapsible categories with a
+   completion ratio (packing lists, checklists, etc).
+ 
+   Usage:
+   <div class="category-section">
+     <div class="category-header" onclick="toggleCollapse('Footwear')">
+       <div class="category-header-top">
+         <span class="category-title">
+           <span class="category-icon-width"><i class="fa-solid fa-chevron-down"></i></span>
+           Footwear
+         </span>
+         <span class="badge badge-neutral">3 / 4 Ready</span>
+       </div>
+       <div class="category-progress-container">
+         <div class="category-progress-bar" style="width:75%"></div>
+       </div>
+     </div>
+     <div class="category-items-container">...rows...</div>
+   </div>
+*/
+.category-section { margin-bottom: 16px }
+.category-header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  display: flex; flex-direction: column;
+  cursor: pointer; user-select: none;
+  transition: background .15s;
+}
+.category-header:hover { background: #f1f5f9 }
+.category-header-top {
+  display: flex; justify-content: space-between; align-items: center; width: 100%;
+}
+.category-title {
+  font-size: var(--t-base); font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.category-icon-width { width: 14px; text-align: center; color: var(--muted) }
+.category-progress-container {
+  width: 100%; background: var(--border2); border-radius: var(--r-sm);
+  height: 6px; margin-top: 8px; overflow: hidden;
+}
+.category-progress-bar {
+  background: var(--app-accent); height: 100%; width: 0%;
+  transition: width .3s ease;
+}

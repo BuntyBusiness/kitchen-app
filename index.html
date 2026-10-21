@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="icon" href="./images/icons/kitchen.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./images/icons/kitchen.png">
+<title>Kitchen</title>
+<link rel="stylesheet" href="./shared/base.css">
+<script src="./shared/utils.js"></script>
+<style>
+:root {
+  --app-primary:    #3a1020;
+  --app-primary2:   #5a1830;
+  --app-primary3:   #8a2840;
+  --app-accent:     #a03020;
+  --app-on-primary:    #ffffff;
+  --app-on-primary2:   #f0b8b0;
+  --app-on-primary3:   #c89090;
+}
+
+/* ── Grid & filters ── */
+.filters-bar{background:var(--white);border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-group{display:flex;align-items:center;gap:5px}
+.filter-lbl{font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.filter-select{font-family:inherit;font-size:11px;color:var(--text);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 22px 4px 8px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;transition:border-color .15s}
+.filter-select:focus{border-color:var(--app-accent)}
+.search-wrap{flex:1;min-width:160px;position:relative}
+.search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:.35;pointer-events:none}
+.search-input{width:100%;font-family:inherit;font-size:11px;color:var(--text);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 8px 4px 26px;outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--app-accent)}
+.search-input::placeholder{color:var(--faint)}
+.clear-btn{font-family:inherit;font-size:11px;font-weight:500;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--muted);transition:background .15s}
+.clear-btn:hover{background:var(--border);color:var(--text)}
+.results-info{font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:14px}
+.recipe-card{background:var(--white);border:1.5px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;animation:fadeUp .3s ease both}
+.recipe-card:hover{border-color:var(--app-accent);box-shadow:0 4px 16px rgba(12,35,64,.1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card-img{width:100%;height:130px;object-fit:cover;display:block;background:var(--surface)}
+.card-img-placeholder{width:100%;height:130px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:2rem}
+.card-body{padding:9px 10px 10px;flex:1;display:flex;flex-direction:column}
+.card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.tag{font-size:8px;font-weight:600;padding:1.5px 6px;border-radius:var(--r-pill);text-transform:uppercase;letter-spacing:.05em}
+.tag-indian{background:#deeaf7;color:#0c447c}.tag-cocktails{background:#f0ede8;color:#5a5750}
+.tag-mexican{background:#faeeda;color:#633806}.tag-sri-lankan{background:#e2f0d6;color:#27500a}
+.tag-asian{background:#eeedfe;color:#3c3489}.tag-western{background:#f5e8f5;color:#5a0c5a}
+.tag-sub{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.card-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:6px;flex:1}
+.card-macros{display:flex;gap:6px;margin-top:auto}
+.macro-item{flex:1;text-align:center;background:var(--surface);border-radius:6px;padding:4px 2px}
+.macro-val{font-size:12px;font-weight:600;color:var(--app-primary);line-height:1}
+.macro-val.hl{color:var(--app-accent)}
+.macro-lbl{font-size:8px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-top:1px}
+.no-results{grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--faint);font-size:13px}
+
+/* ── View modal — fixed full height ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(12,35,64,.55);z-index:1000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(2px)}
+@media(min-width:600px){.modal-overlay{align-items:center;padding:16px}}
+.modal-overlay.open{opacity:1;pointer-events:all}
+/* Mobile: slides up from bottom, fills screen height */
+.modal{background:var(--bg);width:100%;height:92vh;border-radius:14px 14px 0 0;overflow-y:auto;transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.85,.4,1);position:relative;display:flex;flex-direction:column}
+.modal-overlay.open .modal{transform:translateY(0)}
+/* Desktop: centred card with max dimensions */
+@media(min-width:600px){
+  .modal{max-width:680px;height:88vh;border-radius:var(--r-lg);transform:scale(.96) translateY(12px)}
+  .modal-overlay.open .modal{transform:scale(1) translateY(0)}
+}
+.modal-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-close{position:absolute;top:12px;right:12px;width:28px;height:28px;background:rgba(0,0,0,.4);color:#fff;border:none;border-radius:50%;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;transition:background .15s}
+.modal-close:hover{background:rgba(0,0,0,.65)}
+.modal-img-wrap{position:relative;width:100%;height:200px;overflow:hidden;border-radius:14px 14px 0 0;background:var(--surface);flex-shrink:0}
+@media(min-width:600px){.modal-img-wrap{border-radius:var(--r-lg) var(--r-lg) 0 0;height:220px}}
+.modal-img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;transition:transform .35s}
+.modal-img:hover{transform:scale(1.04)}
+.modal-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3.5rem}
+.img-link-hint{position:absolute;bottom:10px;right:10px;background:rgba(12,35,64,.75);color:#a8cfed;padding:3px 9px;border-radius:5px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;pointer-events:none;opacity:0;transition:opacity .15s}
+.modal-img-wrap:hover .img-link-hint{opacity:1}
+
+/* ── Hero band — name + scaler on same row ── */
+.modal-hero{background:var(--app-primary);padding:11px 16px 11px;flex-shrink:0}
+.modal-hero-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mh-left{flex:1;min-width:0}
+.mh-title{font-size:15px;font-weight:600;color:var(--app-on-primary);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-sub{font-size:11px;color:var(--app-on-primary3);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mh-edit-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:5px;color:var(--app-on-primary2);font-size:10px;font-weight:600;padding:2px 8px;cursor:pointer;font-family:inherit;transition:background .15s;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.mh-edit-btn:hover{background:rgba(255,255,255,.22)}
+/* Scaler sits right-side, same row as title */
+.scaler-row{display:inline-flex;align-items:center;gap:0;background:rgba(255,255,255,.1);border-radius:8px;padding:4px 8px;flex-shrink:0}
+.scaler-btn{width:28px;height:28px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;-webkit-tap-highlight-color:transparent;font-family:inherit;flex-shrink:0}
+.scaler-btn:hover:not(:disabled){background:rgba(255,255,255,.28)}
+.scaler-btn:disabled{opacity:.3;cursor:default}
+.scaler-val{font-size:15px;font-weight:600;color:#fff;min-width:34px;text-align:center}
+
+.modal-body{padding:12px 14px 20px;flex:1}
+
+/* ── Nutrition panel ── */
+.nut-panel{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.nut-panel-hdr{background:var(--app-primary2);padding:6px 12px;display:flex;align-items:center;justify-content:space-between}
+.nut-panel-lbl{font-size:9.5px;font-weight:600;color:var(--app-on-primary2);text-transform:uppercase;letter-spacing:.07em}
+.nut-panel-sub{font-size:9px;color:var(--app-on-primary3)}
+.nut-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.nut-cell{padding:8px 6px;text-align:center;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2)}
+.nut-cell:nth-child(4n){border-right:none}
+.nut-cell:nth-last-child(-n+4){border-bottom:none}
+.nut-val{font-size:13px;font-weight:600;color:var(--app-primary);line-height:1}
+.nut-val.hl{color:var(--app-accent)}
+.nut-lbl{font-size:8px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+/* ── Ingredients ── */
+.ing-section{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.ing-section-hdr{background:var(--app-primary2);padding:6px 12px}
+.ing-section-lbl{font-size:9.5px;font-weight:600;color:var(--app-on-primary2);text-transform:uppercase;letter-spacing:.07em}
+.ing-categories{padding:10px 12px;display:flex;flex-direction:column;gap:10px}
+.ing-cat{border-left:2px solid var(--app-accent);padding-left:10px}
+.ing-cat:nth-child(2){border-color:#ef9f27}.ing-cat:nth-child(2) .ing-cat-name{color:#8a5800}
+.ing-cat:nth-child(3){border-color:#3b6d11}.ing-cat:nth-child(3) .ing-cat-name{color:#3b6d11}
+.ing-cat:nth-child(4){border-color:#7f77dd}.ing-cat:nth-child(4) .ing-cat-name{color:#4c46a0}
+.ing-cat:nth-child(5){border-color:#c04080}.ing-cat:nth-child(5) .ing-cat-name{color:#8c1f56}
+.ing-cat:nth-child(6){border-color:#20a080}.ing-cat:nth-child(6) .ing-cat-name{color:#0a6050}
+.ing-cat-name{font-size:9px;font-weight:600;color:var(--app-accent);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.ing-list{list-style:none;display:flex;flex-direction:column;gap:2px}
+.ing-row{display:flex;align-items:baseline;gap:6px;font-size:11.5px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s;border-radius:4px;padding:4px 4px 4px 0;-webkit-tap-highlight-color:transparent}
+.ing-row:last-child{border-bottom:none}
+.ing-row:hover{background:rgba(160,48,32,.04)}
+.ing-row.checked .ing-qty,.ing-row.checked .ing-name{text-decoration:line-through;color:var(--faint);opacity:.6}
+.ing-qty{min-width:56px;font-weight:600;color:var(--app-primary);font-size:11px}
+.ing-name{color:var(--text);flex:1}
+.no-ings{font-size:11px;color:var(--faint);font-style:italic;padding:8px 12px}
+
+/* ── Tab nav inside view modal ── */
+.modal-tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:12px}
+.modal-tab-btn{flex:1;background:none;border:none;padding:9px 6px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.modal-tab-btn:hover{color:var(--text)}
+.modal-tab-btn.active{color:var(--app-accent);border-bottom-color:var(--app-accent)}
+.modal-tab-panel{display:none}
+.modal-tab-panel.active{display:block}
+
+/* ── Method / steps ── */
+.steps-list{display:flex;flex-direction:column;gap:0}
+.step-row{display:flex;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .12s;border-radius:4px;-webkit-tap-highlight-color:transparent}
+.step-row:last-child{border-bottom:none}
+.step-row:hover{background:rgba(160,48,32,.04)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--app-accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:background .15s}
+.step-row.checked .step-num{background:var(--c-success)}
+.step-row.checked .step-text{text-decoration:line-through;color:var(--faint);opacity:.7}
+.step-text{font-size:12.5px;color:var(--text);line-height:1.55;flex:1}
+.no-steps{font-size:11px;color:var(--faint);font-style:italic;text-align:center;padding:24px 16px;background:var(--surface);border-radius:10px;line-height:1.6}
+.steps-progress{font-size:10px;color:var(--muted);text-align:right;margin-bottom:8px}
+
+/* ── iOS edit sheet ── */
+.ios-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(58,16,32,.45);backdrop-filter:blur(8px);justify-content:center;align-items:flex-start}
+.ios-sheet{background:#f2f2f7;width:100%;max-width:560px;height:94vh;margin-top:6vh;border-top-left-radius:14px;border-top-right-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.2);animation:iosSheetSlideUp .28s cubic-bezier(.1,.76,.55,.94)}
+@keyframes iosSheetSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.ios-nav-bar{background:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #c6c6c8;flex-shrink:0}
+.ios-nav-title{font-size:16px;font-weight:600;color:#1c1c1e;text-align:center;flex:1;margin:0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ios-link-btn{background:none;border:none;font-size:15px;color:var(--app-accent);cursor:pointer;padding:0;font-weight:400;-webkit-tap-highlight-color:transparent}
+.ios-link-btn.bold{font-weight:600}
+.ios-link-btn.danger{color:#ff3b30}
+.ios-sheet-body{flex:1;overflow-y:auto;padding:0 16px 40px;-webkit-overflow-scrolling:touch}
+.ios-group-title{font-size:12px;color:#6c6c70;text-transform:uppercase;margin:18px 0 6px 8px;letter-spacing:.3px}
+.ios-group{background:#fff;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.ios-row{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid #e5e5ea;gap:10px;background:#fff}
+.ios-row:last-child{border-bottom:none}
+.ios-row.vertical{flex-direction:column;align-items:flex-start}
+.ios-row.vertical .ios-label{margin-bottom:6px}
+.ios-label{font-size:15px;color:#1c1c1e;min-width:90px;flex-shrink:0}
+.ios-input,.ios-select,.ios-textarea{flex:1;border:none;background:none;font-size:15px;color:#1c1c1e;padding:0;font-family:inherit;width:100%;text-align:right;outline:none}
+.ios-select{appearance:none;color:#8e8e93;cursor:pointer;direction:rtl}
+.ios-textarea{text-align:left;resize:none;min-height:60px;padding-top:4px}
+.ios-danger-block{margin-top:24px;padding:0 8px}
+.ios-danger-btn{width:100%;text-align:center;background:#fff;padding:12px;border-radius:10px;border:1px solid #e5e5ea}
+
+/* ── Ingredient editor rows ── */
+.ed-ing-row{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid #e5e5ea;background:#fff}
+.ed-ing-row:last-child{border-bottom:none}
+.ed-ing-qty{width:55px;border:none;background:none;font-size:14px;color:#1c1c1e;font-family:inherit;outline:none;text-align:right}
+.ed-ing-unit{width:65px;border:none;background:none;font-size:13px;color:#8e8e93;font-family:inherit;outline:none;text-align:center}
+.ed-ing-name{flex:1;border:none;background:none;font-size:14px;color:#1c1c1e;font-family:inherit;outline:none}
+.ed-ing-del{width:22px;height:22px;border-radius:50%;background:#ff3b30;color:#fff;border:none;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.ed-cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 4px;background:#f7f7f7;border-bottom:1px solid #e5e5ea}
+.ed-cat-lbl{font-size:10px;font-weight:700;color:#636366;text-transform:uppercase;letter-spacing:.05em}
+.ed-cat-add{font-size:11px;color:var(--app-accent);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600;-webkit-tap-highlight-color:transparent}
+.ed-add-cat-row{padding:8px 14px;background:#fff;display:flex;align-items:center;gap:8px}
+.ed-add-cat-sel{flex:1;border:none;background:none;font-size:14px;color:#1c1c1e;font-family:inherit;outline:none;appearance:none}
+.ed-add-cat-btn{font-size:11px;color:var(--app-accent);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap}
+
+/* ── Steps paste-and-convert UX ── */
+.steps-paste-wrap{padding:10px 14px;background:#fff;border-bottom:1px solid #e5e5ea}
+.steps-paste-ta{width:100%;border:1.5px solid #e5e5ea;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:#1c1c1e;resize:none;min-height:100px;outline:none;line-height:1.55;transition:border-color .15s}
+.steps-paste-ta:focus{border-color:var(--app-accent)}
+.steps-paste-ta::placeholder{color:#aeaeb2}
+.steps-paste-hint{font-size:11px;color:#aeaeb2;margin-top:5px;line-height:1.5}
+.steps-paste-actions{display:flex;gap:8px;margin-top:8px}
+.steps-paste-btn{flex:1;padding:8px;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.steps-paste-convert{background:var(--app-accent);color:#fff}
+.steps-paste-convert:hover{opacity:.9}
+.steps-paste-clear{background:#f2f2f7;color:#636366;border:1px solid #e5e5ea}
+/* Individual step display in editor */
+.ed-step-row{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:1px solid #e5e5ea;background:#fff}
+.ed-step-row:last-child{border-bottom:none}
+.ed-step-num{width:22px;height:22px;border-radius:50%;background:var(--app-accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.ed-step-text{flex:1;font-size:13.5px;color:#1c1c1e;line-height:1.5;padding:2px 0}
+.ed-step-del{width:20px;height:20px;border-radius:50%;background:#ff3b30;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;-webkit-tap-highlight-color:transparent}
+.ed-steps-empty{font-size:12px;color:#aeaeb2;text-align:center;padding:14px;font-style:italic}
+
+/* ── Save toast ── */
+.save-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--app-primary);color:#fff;padding:9px 20px;border-radius:var(--r-pill);font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+.save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(min-width:600px){.container{padding:0 var(--sp-6)}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <div class="header-row">
+      <div class="header-left">
+        <span class="header-title">FatBoy's Kitchen</span>
+      </div>
+      <div class="header-right">
+        <button class="header-btn" onclick="openEditor(null)">＋ New</button>
+        <button class="header-btn" onclick="promptForGitToken()" title="Set GitHub token">🔑</button>
+        <span class="header-badge" id="recipeCountBadge"></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container" id="app">
+  <div class="sec-lbl">Browse recipes</div>
+  <div class="filters-bar">
+    <div class="search-wrap">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="#666" stroke-width="1.4"/><line x1="9" y1="9" x2="11.5" y2="11.5" stroke="#666" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search dishes or ingredients…">
+    </div>
+    <div class="filter-group">
+      <span class="filter-lbl">Cuisine</span>
+      <select class="filter-select" id="cuisineFilter"></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-lbl">Category</span>
+      <select class="filter-select" id="subCatFilter"></select>
+    </div>
+    <button class="clear-btn" id="clearBtn">Clear</button>
+  </div>
+  <div class="results-info" id="resultsInfo"></div>
+  <div class="recipe-grid" id="recipeGrid"></div>
+</div>
+
+<!-- View modal — wraps in .modal-scroll so hero+tabs stay sticky-like -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-scroll" id="modalScroll">
+      <div class="modal-img-wrap" id="modalImgWrap"></div>
+      <div class="modal-hero" id="modalHero"></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit / Create iOS sheet -->
+<div class="ios-overlay" id="editorOverlay">
+  <div class="ios-sheet">
+    <div class="ios-nav-bar">
+      <button class="ios-link-btn" onclick="closeEditor()">Cancel</button>
+      <div class="ios-nav-title" id="editorTitle">New Recipe</div>
+      <button class="ios-link-btn bold" id="editorSaveBtn" onclick="saveRecipe()">Save</button>
+    </div>
+    <div class="ios-sheet-body" id="editorBody"></div>
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast"></div>
+
+<script>
+const GITHUB_CONFIG = { owner:"fatbuoy", repo:"app-data", path:"data/recipes.json", branch:"main" };
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+let recipes      = [];
+let ingredients  = {};   // {id: [{cat,qty,rawQty,unit,name}]}
+let stepsData    = {};   // {id: [{step,instruction}]}
+let rawNutrition = {};   // {id: nutrition obj} — static, never scaled
+let rawRecipeMap = {};   // {id: full raw JSON recipe}
+
+const CUISINES   = ['Indian','Mexican','Sri Lankan','Asian','Western','Cocktails'];
+const CATEGORIES = ['Biryani','Bowl','Bread','Breakfast','Brunch','Burger','Cake','Cocktail','Condiment','Curry','Dal','Dessert','Dip','Drinks','Gravy','Juice','Noodles','Pancakes','Pasta','Pickle','Pizza','Raita','Rice','Roti','Salad','Sandwich','Snack','Soup','Starter','Stir Fry','Tacos','Wrap','Other'];
+const CAT_ORDER  = ['Vegetables','Legumes/Dals','Grains/Flour','Dairy','Nuts/Coconut','Spices (Powder)','Spices (Whole/Seeds)','Fresh Aromatics','Oils/Fats','Alcohol/Cocktail','Citrus/Acid','Liquids','Fruits','Salt/Seasonings','Other'];
+
+function adaptRecipes(raw) {
+  raw.recipes.forEach(r => {
+    const id = parseInt(r.id);
+    recipes.push({
+      id, name:r.name, cuisine:r.cuisine, sub:r.category,
+      servings:r.servings, img:r.imageUrl, link:r.pageLink, source:r.source||'',
+      cal:r.nutrition?.calories, protein:r.nutrition?.protein_g,
+      carb:r.nutrition?.carbs_g, fat:r.nutrition?.fat_g,
+    });
+    ingredients[id] = (r.ingredients||[]).flatMap(g =>
+      (g.items||[]).map(i => ({
+        cat:g.category, qty:i.quantity+(i.unit?' '+i.unit:''),
+        rawQty:parseFloat(i.quantity)||null, unit:i.unit||'', name:i.name
+      }))
+    );
+    stepsData[id]    = (r.steps||[]).slice().sort((a,b)=>a.step-b.step);
+    rawNutrition[id] = r.nutrition||{};
+    rawRecipeMap[id] = r;
+  });
+}
+
+// ─── COOK MODE STATE ─────────────────────────────────────────────────────────
+let currentRecipe      = null;
+let currentServings    = 1;
+let checkedIngredients = new Set();
+let checkedSteps       = new Set();
+let activeTab          = 'ingredients';
+
+function scaleQty(rawQty, unit, scale) {
+  if (rawQty===null) return '';
+  const val = rawQty*scale;
+  const d = Number.isInteger(val) ? String(val) : val.toFixed(1);
+  return unit ? d+' '+unit : d;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+const cuisineFilter = document.getElementById('cuisineFilter');
+const subCatFilter  = document.getElementById('subCatFilter');
+const searchInput   = document.getElementById('searchInput');
+const recipeGrid    = document.getElementById('recipeGrid');
+const resultsInfo   = document.getElementById('resultsInfo');
+
+async function init() {
+  const raw = await fetchFromGitHub(GITHUB_CONFIG, 'recipeGrid');
+  if (!raw) return;
+  adaptRecipes(raw);
+  const cuisines = [...new Set(recipes.map(r=>r.cuisine))].sort();
+  const subCats  = [...new Set(recipes.map(r=>r.sub).filter(Boolean))].sort();
+  cuisineFilter.innerHTML = '<option value="">All cuisines</option>'+cuisines.map(c=>`<option>${c}</option>`).join('');
+  subCatFilter.innerHTML  = '<option value="">All categories</option>'+subCats.map(s=>`<option>${s}</option>`).join('');
+  renderCards(recipes);
+}
+
+const cuisineTagClass = {'Indian':'tag-indian','Cocktails':'tag-cocktails','Mexican':'tag-mexican','Sri Lankan':'tag-sri-lankan','Asian':'tag-asian','Western':'tag-western'};
+const cuisineEmoji    = {'Indian':'🍛','Cocktails':'🍹','Mexican':'🌮','Sri Lankan':'🥥','Asian':'🥢','Western':'🍽️'};
+function isPlaceholder(url){return !url||url.includes('recipe_image_placeholder')}
+
+// ─── RENDER CARDS ─────────────────────────────────────────────────────────────
+function renderCards(list) {
+  recipeGrid.innerHTML='';
+  resultsInfo.textContent=`${list.length} recipe${list.length!==1?'s':''} found`;
+  const badge=document.getElementById('recipeCountBadge');
+  if(badge) badge.textContent=`${recipes.length} recipes`;
+  if(!list.length){recipeGrid.innerHTML='<div class="no-results">No recipes match — try a different search or filter.</div>';return;}
+  list.forEach((r,i)=>{
+    const card=document.createElement('div');
+    card.className='recipe-card';
+    card.style.animationDelay=`${Math.min(i*.025,.35)}s`;
+    const tc=cuisineTagClass[r.cuisine]||'tag-indian', em=cuisineEmoji[r.cuisine]||'🍴';
+    card.innerHTML=`
+      ${isPlaceholder(r.img)?`<div class="card-img-placeholder">${em}</div>`:`<img class="card-img" src="${r.img}" alt="${r.name}" onerror="this.parentNode.innerHTML='<div class=card-img-placeholder>${em}</div>'">`}
+      <div class="card-body">
+        <div class="card-tags"><span class="tag ${tc}">${r.cuisine}</span>${r.sub?`<span class="tag tag-sub">${r.sub}</span>`:''}</div>
+        <div class="card-name">${r.name}</div>
+        <div class="card-macros">
+          <div class="macro-item"><div class="macro-val hl">${r.cal??'—'}</div><div class="macro-lbl">kcal</div></div>
+          <div class="macro-item"><div class="macro-val">${r.protein??'—'}g</div><div class="macro-lbl">protein</div></div>
+          <div class="macro-item"><div class="macro-val">${r.carb??'—'}g</div><div class="macro-lbl">carbs</div></div>
+          <div class="macro-item"><div class="macro-val">${r.fat??'—'}g</div><div class="macro-lbl">fat</div></div>
+        </div>
+      </div>`;
+    card.addEventListener('click',()=>openModal(r));
+    recipeGrid.appendChild(card);
+  });
+}
+
+function filterRecipes(){
+  const q=searchInput.value.toLowerCase().trim(), cu=cuisineFilter.value, sc=subCatFilter.value;
+  return recipes.filter(r=>{
+    if(cu&&r.cuisine!==cu) return false;
+    if(sc&&r.sub!==sc) return false;
+    if(q){
+      const ings=(ingredients[r.id]||[]).map(i=>i.name.toLowerCase()).join(' ');
+      if(!r.name.toLowerCase().includes(q)&&!r.cuisine.toLowerCase().includes(q)&&!r.sub.toLowerCase().includes(q)&&!ings.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function applyFilters(){renderCards(filterRecipes());}
+searchInput.addEventListener('input',applyFilters);
+cuisineFilter.addEventListener('change',applyFilters);
+subCatFilter.addEventListener('change',applyFilters);
+document.getElementById('clearBtn').addEventListener('click',()=>{searchInput.value='';cuisineFilter.value='';subCatFilter.value='';applyFilters();});
+
+// ─── VIEW MODAL ───────────────────────────────────────────────────────────────
+const overlay      = document.getElementById('modalOverlay');
+const modalImgWrap = document.getElementById('modalImgWrap');
+const modalHero    = document.getElementById('modalHero');
+const modalBody    = document.getElementById('modalBody');
+
+// Hero: name + edit button on left, scaler (no labels) on right — same row
+function renderModalHero(r) {
+  const tc = cuisineTagClass[r.cuisine]||'tag-indian';
+  modalHero.innerHTML=`
+    <div class="modal-hero-row">
+      <div class="mh-left">
+        <div class="mh-title">${r.name}</div>
+        <div class="mh-sub">
+          <span class="tag ${tc}" style="font-size:9px">${r.cuisine}</span>
+          ${r.sub?`<span class="tag tag-sub" style="font-size:9px;background:rgba(255,255,255,.12);color:#a8cfed;border-color:transparent">${r.sub}</span>`:''}
+          <button class="mh-edit-btn" onclick="openEditor(currentRecipe)">✎ Edit</button>
+        </div>
+      </div>
+      <div class="scaler-row">
+        <button class="scaler-btn" onclick="changeServings(-1)" ${currentServings<=1?'disabled':''}>−</button>
+        <span class="scaler-val">${currentServings}</span>
+        <button class="scaler-btn" onclick="changeServings(1)" ${currentServings>=20?'disabled':''}>+</button>
+      </div>
+    </div>`;
+}
+
+// Nutrition tab — static, never affected by scaler
+function renderNutritionTab(r) {
+  const nut=rawNutrition[r.id];
+  if(!nut||!Object.keys(nut).length) return `<div class="no-steps">No nutrition data recorded yet.<br>This will be auto-calculated from ingredients in a future update.</div>`;
+  return `
+    <div class="nut-panel" style="margin-top:4px">
+      <div class="nut-panel-hdr">
+        <span class="nut-panel-lbl">Macros &amp; Micronutrients</span>
+        <span class="nut-panel-sub">per serving · recipe makes ${r.servings}</span>
+      </div>
+      <div class="nut-grid">
+        <div class="nut-cell"><div class="nut-val hl">${nut.calories??'—'}</div><div class="nut-lbl">Calories</div></div>
+        <div class="nut-cell"><div class="nut-val">${nut.protein_g??'—'}g</div><div class="nut-lbl">Protein</div></div>
+        <div class="nut-cell"><div class="nut-val">${nut.carbs_g??'—'}g</div><div class="nut-lbl">Carbs</div></div>
+        <div class="nut-cell"><div class="nut-val">${nut.fat_g??'—'}g</div><div class="nut-lbl">Fat</div></div>
+        <div class="nut-cell"><div class="nut-val">${nut.fiber_g??'—'}g</div><div class="nut-lbl">Fiber</div></div>
+        <div class="nut-cell"><div class="nut-val">${nut.sugars_g??'—'}g</div><div class="nut-lbl">Sugar</div></div>
+        <div class="nut-cell"><div class="nut-val">${nut.saturatedFat_g??'—'}g</div><div class="nut-lbl">Sat Fat</div></div>
+        <div class="nut-cell"><div class="nut-val">${nut.sodium_mg??'—'}mg</div><div class="nut-lbl">Sodium</div></div>
+      </div>
+    </div>
+    <p style="font-size:10px;color:var(--faint);text-align:center;margin-top:10px">Values per serving as recorded. Will auto-calculate from ingredients in Phase 3.</p>`;
+}
+
+function renderIngredientsTab(r, scale) {
+  const ings=ingredients[r.id]||[];
+  const byCat={};
+  ings.forEach((item,idx)=>{(byCat[item.cat]=byCat[item.cat]||[]).push({...item,idx});});
+  const sortedCats=Object.keys(byCat).sort((a,b)=>{
+    const ia=CAT_ORDER.indexOf(a),ib=CAT_ORDER.indexOf(b);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+  const ingHTML=sortedCats.length
+    ?sortedCats.map(cat=>`
+      <div class="ing-cat">
+        <div class="ing-cat-name">${cat}</div>
+        <ul class="ing-list">
+          ${byCat[cat].map(item=>{
+            const sq=(scale!==1&&item.rawQty!==null)?scaleQty(item.rawQty,item.unit,scale):item.qty;
+            const cls=checkedIngredients.has(item.idx)?' checked':'';
+            return `<li class="ing-row${cls}" data-idx="${item.idx}" onclick="toggleIngredient(${item.idx})">
+              <span class="ing-qty">${sq||'—'}</span>
+              <span class="ing-name">${item.name}</span>
+            </li>`;
+          }).join('')}
+        </ul>
+      </div>`).join('')
+    :'<p class="no-ings">No ingredient details available</p>';
+  return `
+    <div class="sec-lbl" style="margin-bottom:6px">
+      Ingredients by category
+      ${ings.length?`<span style="font-weight:400;color:var(--faint);text-transform:none;font-size:9px;letter-spacing:0;margin-left:6px" id="ingCounter">${checkedIngredients.size}/${ings.length} checked</span>`:''}
+    </div>
+    <div class="ing-section">
+      <div class="ing-section-hdr"><span class="ing-section-lbl">Tap any row to check off</span></div>
+      <div class="ing-categories">${ingHTML}</div>
+    </div>`;
+}
+
+function renderMethodTab(r) {
+  const steps=stepsData[r.id]||[];
+  if(!steps.length) return `<div class="no-steps">No method added yet.<br>Tap <strong>✎ Edit</strong> to add steps.</div>`;
+  return `
+    <div class="steps-progress" id="stepsProgress">${checkedSteps.size} of ${steps.length} steps done</div>
+    <div class="steps-list">
+      ${steps.map((s,idx)=>{
+        const cls=checkedSteps.has(idx)?' checked':'';
+        return `<div class="step-row${cls}" data-step="${idx}" onclick="toggleStep(${idx})">
+          <div class="step-num">${checkedSteps.has(idx)?'✓':s.step}</div>
+          <div class="step-text">${s.instruction}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderModalBody(r, scale) {
+  const steps=stepsData[r.id]||[];
+  modalBody.innerHTML=`
+    <div class="modal-tab-bar">
+      <button class="modal-tab-btn${activeTab==='ingredients'?' active':''}" onclick="switchTab('ingredients',this)">🥄 Ingredients</button>
+      <button class="modal-tab-btn${activeTab==='method'?' active':''}" onclick="switchTab('method',this)">📋 Method${steps.length?` (${steps.length})`:''}</button>
+      <button class="modal-tab-btn${activeTab==='nutrition'?' active':''}" onclick="switchTab('nutrition',this)">📊 Nutrition</button>
+    </div>
+    <div class="modal-tab-panel${activeTab==='ingredients'?' active':''}" id="tabIngredients">${renderIngredientsTab(r,scale)}</div>
+    <div class="modal-tab-panel${activeTab==='method'?' active':''}" id="tabMethod">${renderMethodTab(r)}</div>
+    <div class="modal-tab-panel${activeTab==='nutrition'?' active':''}" id="tabNutrition">${renderNutritionTab(r)}</div>`;
+}
+
+function switchTab(tab,btn){
+  activeTab=tab;
+  document.querySelectorAll('.modal-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.modal-tab-panel').forEach(p=>p.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const ids={ingredients:'tabIngredients',method:'tabMethod',nutrition:'tabNutrition'};
+  const p=document.getElementById(ids[tab]); if(p) p.classList.add('active');
+}
+
+function toggleIngredient(idx){
+  checkedIngredients.has(idx)?checkedIngredients.delete(idx):checkedIngredients.add(idx);
+  const row=document.querySelector(`.ing-row[data-idx="${idx}"]`);
+  if(row) row.classList.toggle('checked',checkedIngredients.has(idx));
+  const ings=ingredients[currentRecipe.id]||[];
+  const counter=document.getElementById('ingCounter');
+  if(counter) counter.textContent=`${checkedIngredients.size}/${ings.length} checked`;
+}
+
+function toggleStep(idx){
+  checkedSteps.has(idx)?checkedSteps.delete(idx):checkedSteps.add(idx);
+  const row=document.querySelector(`.step-row[data-step="${idx}"]`);
+  if(row){
+    row.classList.toggle('checked',checkedSteps.has(idx));
+    const ne=row.querySelector('.step-num');
+    const steps=stepsData[currentRecipe.id]||[];
+    if(ne) ne.textContent=checkedSteps.has(idx)?'✓':String(steps[idx]?.step??idx+1);
+  }
+  const prog=document.getElementById('stepsProgress');
+  if(prog) prog.textContent=`${checkedSteps.size} of ${(stepsData[currentRecipe.id]||[]).length} steps done`;
+}
+
+function changeServings(delta){
+  const next=currentServings+delta;
+  if(next<1||next>20) return;
+  currentServings=next;
+  const scale=currentServings/currentRecipe.servings;
+  renderModalHero(currentRecipe);
+  // Patch ingredients tab only — nutrition stays static
+  const ingPanel=document.getElementById('tabIngredients');
+  if(ingPanel) ingPanel.innerHTML=renderIngredientsTab(currentRecipe,scale);
+}
+
+function openModal(r){
+  currentRecipe=r; currentServings=r.servings;
+  checkedIngredients.clear(); checkedSteps.clear(); activeTab='ingredients';
+  const em=cuisineEmoji[r.cuisine]||'🍴', hasImg=!isPlaceholder(r.img), hasLink=!!r.link;
+  modalImgWrap.innerHTML=hasImg
+    ?`<img class="modal-img" src="${r.img}" alt="${r.name}"${hasLink?` onclick="window.open('${r.link}','_blank')" title="Open recipe page"`:''} onerror="this.parentNode.innerHTML='<div class=modal-img-placeholder>${em}</div>'">${hasLink?'<div class="img-link-hint">↗ Open recipe page</div>':''}`
+    :`<div class="modal-img-placeholder"${hasLink?` onclick="window.open('${r.link}','_blank')" style="cursor:pointer"`:''} >${em}</div>${hasLink?'<div class="img-link-hint">↗ Open recipe page</div>':''}`;
+  renderModalHero(r);
+  renderModalBody(r,1);
+  overlay.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(){
+  overlay.classList.remove('open');
+  document.body.style.overflow='';
+  currentRecipe=null; checkedIngredients.clear(); checkedSteps.clear(); activeTab='ingredients';
+}
+
+document.getElementById('modalClose').addEventListener('click',closeModal);
+overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeEditor();}});
+
+// ─── EDITOR ───────────────────────────────────────────────────────────────────
+let editorRecipe  = null;
+let edIngredients = [];
+let edSteps       = [];
+
+const editorOverlay = document.getElementById('editorOverlay');
+
+function openEditor(r){
+  closeModal();
+  editorRecipe=r?rawRecipeMap[r.id]:null;
+  if(editorRecipe){
+    edIngredients=JSON.parse(JSON.stringify(editorRecipe.ingredients||[]));
+    edSteps=JSON.parse(JSON.stringify(editorRecipe.steps||[])).sort((a,b)=>a.step-b.step);
+  } else {
+    edIngredients=[]; edSteps=[];
+  }
+  document.getElementById('editorTitle').textContent=editorRecipe?'Edit Recipe':'New Recipe';
+  renderEditorBody();
+  editorOverlay.style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+function closeEditor(){
+  editorOverlay.style.display='none';
+  document.body.style.overflow='';
+  editorRecipe=null; edIngredients=[]; edSteps=[];
+}
+
+function renderEditorBody(){
+  const r=editorRecipe;
+  const cuOpts=CUISINES.map(c=>`<option value="${c}"${r?.cuisine===c?' selected':''}>${c}</option>`).join('');
+  const catOpts=CATEGORIES.map(c=>`<option value="${c}"${r?.category===c?' selected':''}>${c}</option>`).join('');
+
+  document.getElementById('editorBody').innerHTML=`
+    <!-- Details -->
+    <div class="ios-group-title">Details</div>
+    <div class="ios-group">
+      <div class="ios-row"><label class="ios-label">Name</label><input class="ios-input" id="ef-name" type="text" placeholder="Recipe name" value="${esc(r?.name||'')}"></div>
+      <div class="ios-row"><label class="ios-label">Cuisine</label><select class="ios-select" id="ef-cuisine"><option value="">— select —</option>${cuOpts}</select></div>
+      <div class="ios-row"><label class="ios-label">Category</label><select class="ios-select" id="ef-category"><option value="">— select —</option>${catOpts}</select></div>
+      <div class="ios-row"><label class="ios-label">Source</label><input class="ios-input" id="ef-source" type="text" placeholder="Person, book or website" value="${esc(r?.source||'')}"></div>
+      <div class="ios-row"><label class="ios-label">Servings</label><input class="ios-input" id="ef-servings" type="number" min="1" max="50" placeholder="4" value="${r?.servings||''}"></div>
+      <div class="ios-row"><label class="ios-label">Page link</label><input class="ios-input" id="ef-link" type="url" placeholder="https://…" value="${esc(r?.pageLink||'')}"></div>
+      <div class="ios-row"><label class="ios-label">Image URL</label><input class="ios-input" id="ef-img" type="url" placeholder="./images/recipes/…" value="${esc(r?.imageUrl||'')}"></div>
+    </div>
+
+    <!-- Ingredients -->
+    <div class="ios-group-title">Ingredients</div>
+    <div class="ios-group" id="ed-ing-group">
+      ${renderEdIngredients()}
+      <div class="ed-add-cat-row">
+        <select class="ed-add-cat-sel" id="ed-new-cat-sel">${CAT_ORDER.map(c=>`<option>${c}</option>`).join('')}</select>
+        <button class="ed-add-cat-btn" onclick="edAddCategory()">＋ Add category</button>
+      </div>
+    </div>
+
+    <!-- Steps — paste-and-convert -->
+    <div class="ios-group-title">Method steps</div>
+    <div class="ios-group" id="ed-steps-group">
+      ${renderEdStepsList()}
+      <div class="steps-paste-wrap">
+        <textarea class="steps-paste-ta" id="stepsPasteArea" placeholder="Paste or type steps here — one per line, or numbered like:&#10;1. Rinse the dal&#10;2. Heat oil in a pan&#10;3. Add the spices…"></textarea>
+        <p class="steps-paste-hint">Each line becomes a step. Numbers and dots are stripped automatically.</p>
+        <div class="steps-paste-actions">
+          <button class="steps-paste-btn steps-paste-convert" onclick="convertPastedSteps()">Convert to steps</button>
+          <button class="steps-paste-btn steps-paste-clear" onclick="clearPasteArea()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    ${r?`<div class="ios-danger-block"><button class="ios-link-btn danger bold ios-danger-btn" onclick="confirmDeleteRecipe()">Delete Recipe</button></div>`:''}
+    <div style="height:20px"></div>`;
+}
+
+function esc(s){return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+
+// ── Ingredient editor ─────────────────────────────────────────────────────────
+function renderEdIngredients(){
+  if(!edIngredients.length) return '';
+  return edIngredients.map((group,gi)=>`
+    <div class="ed-cat-hdr">
+      <span class="ed-cat-lbl">${group.category}</span>
+      <button class="ed-cat-add" onclick="edAddIngRow(${gi})">＋ item</button>
+    </div>
+    ${(group.items||[]).map((item,ii)=>`
+      <div class="ed-ing-row" id="ing-${gi}-${ii}">
+        <input class="ed-ing-qty" type="text" placeholder="qty" value="${esc(item.quantity||'')}" oninput="edUpdateIng(${gi},${ii},'quantity',this.value)">
+        <input class="ed-ing-unit" type="text" placeholder="unit" value="${esc(item.unit||'')}" oninput="edUpdateIng(${gi},${ii},'unit',this.value)">
+        <input class="ed-ing-name" type="text" placeholder="ingredient" value="${esc(item.name||'')}" oninput="edUpdateIng(${gi},${ii},'name',this.value)">
+        <button class="ed-ing-del" onclick="edRemoveIng(${gi},${ii})">×</button>
+      </div>`).join('')}`).join('');
+}
+
+function edUpdateIng(gi,ii,field,val){if(edIngredients[gi]?.items?.[ii]) edIngredients[gi].items[ii][field]=val;}
+function edAddIngRow(gi){edIngredients[gi].items.push({name:'',quantity:'',unit:''});refreshEdIngredients();}
+function edRemoveIng(gi,ii){
+  edIngredients[gi].items.splice(ii,1);
+  if(!edIngredients[gi].items.length) edIngredients.splice(gi,1);
+  refreshEdIngredients();
+}
+function edAddCategory(){
+  const sel=document.getElementById('ed-new-cat-sel'), cat=sel?.value;
+  if(!cat) return;
+  if(edIngredients.find(g=>g.category===cat)){showToast(`"${cat}" already exists`);return;}
+  edIngredients.push({category:cat,items:[{name:'',quantity:'',unit:''}]});
+  refreshEdIngredients();
+}
+function refreshEdIngredients(){
+  const grp=document.getElementById('ed-ing-group');
+  if(!grp) return;
+  const addRow=grp.querySelector('.ed-add-cat-row');
+  grp.innerHTML=renderEdIngredients()+(addRow?addRow.outerHTML:'');
+}
+
+// ── Steps paste-and-convert ───────────────────────────────────────────────────
+function renderEdStepsList(){
+  if(!edSteps.length) return `<div class="ed-steps-empty" id="stepsEmptyMsg">Steps added via the box below will appear here.</div>`;
+  return edSteps.map((s,idx)=>`
+    <div class="ed-step-row" id="ed-step-${idx}">
+      <div class="ed-step-num">${idx+1}</div>
+      <div class="ed-step-text">${esc(s.instruction||'')}</div>
+      <button class="ed-step-del" onclick="edRemoveStep(${idx})">×</button>
+    </div>`).join('');
+}
+
+function convertPastedSteps(){
+  const ta=document.getElementById('stepsPasteArea');
+  if(!ta||!ta.value.trim()){showToast('Nothing to convert');return;}
+  const lines=ta.value.split('\n')
+    .map(l=>l.replace(/^\s*(\d+[\.\)]\s*|\-\s*|\*\s*)/,'').trim())
+    .filter(l=>l.length>0);
+  if(!lines.length){showToast('No steps found');return;}
+  // Append to existing steps (don't wipe)
+  const startIdx=edSteps.length;
+  lines.forEach((line,i)=>edSteps.push({step:startIdx+i+1,instruction:line}));
+  ta.value='';
+  refreshEdSteps();
+  showToast(`${lines.length} step${lines.length!==1?'s':''} added`);
+}
+
+function clearPasteArea(){
+  const ta=document.getElementById('stepsPasteArea');
+  if(ta) ta.value='';
+}
+
+function edRemoveStep(idx){
+  edSteps.splice(idx,1);
+  edSteps.forEach((s,i)=>s.step=i+1);
+  refreshEdSteps();
+}
+
+function refreshEdSteps(){
+  const grp=document.getElementById('ed-steps-group');
+  if(!grp) return;
+  const pasteWrap=grp.querySelector('.steps-paste-wrap');
+  grp.innerHTML=renderEdStepsList()+(pasteWrap?pasteWrap.outerHTML:'');
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+function confirmDeleteRecipe(){
+  if(!editorRecipe) return;
+  if(!confirm(`Delete "${editorRecipe.name}"? This cannot be undone.`)) return;
+  deleteRecipe(editorRecipe.id);
+}
+async function deleteRecipe(id){
+  const token=localStorage.getItem('gh_pat_token');
+  if(!token){showToast('No GitHub token');return;}
+  showToast('Deleting…');
+  try{
+    const raw=await ghGetFile();
+    raw.recipes=raw.recipes.filter(r=>r.id!==String(id));
+    raw.meta.count=raw.recipes.length;
+    await ghPutFile(raw,raw._sha);
+    const idx=recipes.findIndex(r=>r.id===parseInt(id));
+    if(idx!==-1) recipes.splice(idx,1);
+    delete ingredients[parseInt(id)]; delete stepsData[parseInt(id)];
+    delete rawNutrition[parseInt(id)]; delete rawRecipeMap[parseInt(id)];
+    closeEditor(); applyFilters(); showToast('Recipe deleted');
+  } catch(e){showToast('Delete failed: '+e.message);}
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+async function saveRecipe(){
+  const btn=document.getElementById('editorSaveBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try{
+    const built=buildRecipeFromForm();
+    if(!built.name){showToast('Name is required');btn.disabled=false;btn.textContent='Save';return;}
+    const token=localStorage.getItem('gh_pat_token');
+    if(!token){
+      applyLocalUpdate(built); closeEditor(); applyFilters();
+      showToast('Saved locally (no GitHub token)');
+      return;
+    }
+    showToast('Saving to GitHub…');
+    const raw=await ghGetFile();
+    const ei=raw.recipes.findIndex(r=>r.id===built.id);
+    if(ei!==-1){raw.recipes[ei]=built;}else{raw.recipes.push(built);raw.meta.count=raw.recipes.length;}
+    await ghPutFile(raw,raw._sha);
+    applyLocalUpdate(built); closeEditor(); applyFilters(); showToast('Saved ✓');
+  } catch(e){showToast('Save failed: '+e.message);}
+  finally{btn.disabled=false;btn.textContent='Save';}
+}
+
+function buildRecipeFromForm(){
+  const isNew=!editorRecipe;
+  const newId=isNew?String(Math.max(0,...recipes.map(r=>r.id))+1):String(editorRecipe.id);
+
+  // Capture live ingredient values from DOM
+  const liveIngs=JSON.parse(JSON.stringify(edIngredients));
+  document.querySelectorAll('.ed-ing-row').forEach(row=>{
+    const parts=row.id.split('-'); const gi=parseInt(parts[1]),ii=parseInt(parts[2]);
+    const inputs=row.querySelectorAll('input');
+    if(liveIngs[gi]?.items?.[ii]){
+      liveIngs[gi].items[ii].quantity=inputs[0]?.value||'';
+      liveIngs[gi].items[ii].unit=inputs[1]?.value||'';
+      liveIngs[gi].items[ii].name=inputs[2]?.value||'';
+    }
+  });
+  const cleanIngs=liveIngs.map(g=>({...g,items:g.items.filter(i=>i.name.trim())})).filter(g=>g.items.length);
+  const cleanSteps=edSteps.filter(s=>(s.instruction||'').trim());
+
+  return {
+    id:newId,
+    name:(document.getElementById('ef-name')?.value||'').trim(),
+    source:(document.getElementById('ef-source')?.value||'').trim(),
+    cuisine:document.getElementById('ef-cuisine')?.value||'',
+    category:document.getElementById('ef-category')?.value||'',
+    servings:parseInt(document.getElementById('ef-servings')?.value)||4,
+    imageUrl:(document.getElementById('ef-img')?.value||'').trim(),
+    pageLink:(document.getElementById('ef-link')?.value||'').trim(),
+    // Preserve existing nutrition data; Phase 3 will compute from ingredients
+    nutrition:editorRecipe?.nutrition||{calories:null,protein_g:null,carbs_g:null,fat_g:null,fiber_g:null,sugars_g:null,saturatedFat_g:null,sodium_mg:null,cholesterol_mg:null},
+    ingredients:cleanIngs,
+    steps:cleanSteps,
+    linkedRecipes:editorRecipe?.linkedRecipes||[],
+  };
+}
+
+function applyLocalUpdate(built){
+  const id=parseInt(built.id);
+  const ei=recipes.findIndex(r=>r.id===id);
+  const adapted={
+    id, name:built.name, cuisine:built.cuisine, sub:built.category,
+    servings:built.servings, img:built.imageUrl, link:built.pageLink, source:built.source,
+    cal:built.nutrition?.calories, protein:built.nutrition?.protein_g,
+    carb:built.nutrition?.carbs_g, fat:built.nutrition?.fat_g,
+  };
+  if(ei!==-1){recipes[ei]=adapted;}else{recipes.push(adapted);}
+  ingredients[id]=(built.ingredients||[]).flatMap(g=>(g.items||[]).map(i=>({
+    cat:g.category,qty:i.quantity+(i.unit?' '+i.unit:''),
+    rawQty:parseFloat(i.quantity)||null,unit:i.unit||'',name:i.name
+  })));
+  stepsData[id]=(built.steps||[]).slice().sort((a,b)=>a.step-b.step);
+  rawNutrition[id]=built.nutrition||{};
+  rawRecipeMap[id]=built;
+}
+
+// ── GitHub helpers ────────────────────────────────────────────────────────────
+async function ghGetFile(){
+  const token=localStorage.getItem('gh_pat_token');
+  const url=`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}`;
+  const res=await fetch(url,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}});
+  if(!res.ok) throw new Error(`GitHub GET failed: ${res.status}`);
+  const meta=await res.json();
+  const bytes=Uint8Array.from(atob(meta.content.replace(/\n/g,'')),c=>c.charCodeAt(0));
+  const parsed=JSON.parse(new TextDecoder('utf-8').decode(bytes));
+  parsed._sha=meta.sha; return parsed;
+}
+async function ghPutFile(data,sha){
+  const token=localStorage.getItem('gh_pat_token');
+  const url=`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
+  const {_sha,...clean}=data;
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(clean,null,2))));
+  const body={message:'Update recipes via FatBoy Kitchen app',content:b64,branch:GITHUB_CONFIG.branch};
+  if(sha) body.sha=sha;
+  const res=await fetch(url,{method:'PUT',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){const e=await res.json();throw new Error(e.message||`GitHub PUT failed: ${res.status}`);}
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg){
+  const t=document.getElementById('saveToast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+init();
+</script>
+</body>
+</html>
