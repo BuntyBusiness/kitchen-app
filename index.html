@@ -301,7 +301,7 @@ function adaptRecipes(raw) {
     ingredients[id] = (r.ingredients||[]).flatMap(g =>
       (g.items||[]).map(i => ({
         cat:g.category, qty:i.quantity+(i.unit?' '+i.unit:''),
-        rawQty:parseFloat(i.quantity)||null, unit:i.unit||'', name:i.name
+        rawQty:parseQty(i.quantity), unit:i.unit||'', name:i.name
       }))
     );
     stepsData[id]    = (r.steps||[]).slice().sort((a,b)=>a.step-b.step);
@@ -317,10 +317,42 @@ let checkedIngredients = new Set();
 let checkedSteps       = new Set();
 let activeTab          = 'ingredients';
 
+// Reads "1/2", "1 1/2", "0.5", "1½", "2" and returns a number (or null if unreadable, e.g. "2-3")
+function parseQty(q) {
+  if (q===null||q===undefined) return null;
+  let s=String(q).trim();
+  if(!s) return null;
+  const uni={'½':.5,'¼':.25,'¾':.75,'⅓':1/3,'⅔':2/3,'⅛':.125,'⅜':.375,'⅝':.625,'⅞':.875};
+  let total=0, found=false;
+  for(const ch in uni){ if(s.includes(ch)){ total+=uni[ch]; s=s.replace(ch,' '); found=true; } }
+  s=s.trim();
+  if(s){
+    for(const p of s.split(/\s+/)){
+      let v;
+      if(/^\d+\/\d+$/.test(p)){ const [a,b]=p.split('/').map(Number); if(!b) return null; v=a/b; }
+      else if(/^\d*\.?\d+$/.test(p)) v=parseFloat(p);
+      else return null;
+      total+=v; found=true;
+    }
+  }
+  return (found&&total>0)?total:null;
+}
+
+// Shows a number nicely: 0.75 → ¾, 1.5 → 1½, 312.5 → 313
+function formatQty(val) {
+  if(val>=20) return String(Math.round(val));
+  const fr=[[0,''],[1/8,'⅛'],[1/4,'¼'],[1/3,'⅓'],[3/8,'⅜'],[1/2,'½'],[5/8,'⅝'],[2/3,'⅔'],[3/4,'¾'],[7/8,'⅞'],[1,'']];
+  let whole=Math.floor(val), frac=val-whole, best=fr[0];
+  fr.forEach(f=>{ if(Math.abs(f[0]-frac)<Math.abs(best[0]-frac)) best=f; });
+  if(Math.abs(best[0]-frac)>0.03) return String(Math.round(val*100)/100);
+  if(best[0]===1) whole+=1;
+  if(!best[1]) return String(whole);
+  return (whole?whole:'')+best[1];
+}
+
 function scaleQty(rawQty, unit, scale) {
   if (rawQty===null) return '';
-  const val = rawQty*scale;
-  const d = Number.isInteger(val) ? String(val) : val.toFixed(1);
+  const d = formatQty(rawQty*scale);
   return unit ? d+' '+unit : d;
 }
 
@@ -824,7 +856,7 @@ function applyLocalUpdate(built){
   if(ei!==-1){recipes[ei]=adapted;}else{recipes.push(adapted);}
   ingredients[id]=(built.ingredients||[]).flatMap(g=>(g.items||[]).map(i=>({
     cat:g.category,qty:i.quantity+(i.unit?' '+i.unit:''),
-    rawQty:parseFloat(i.quantity)||null,unit:i.unit||'',name:i.name
+    rawQty:parseQty(i.quantity),unit:i.unit||'',name:i.name
   })));
   stepsData[id]=(built.steps||[]).slice().sort((a,b)=>a.step-b.step);
   rawNutrition[id]=built.nutrition||{};
@@ -863,11 +895,6 @@ function showToast(msg){
 }
 
 init();
-</script>
-  <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
-  }
 </script>
 </body>
 </html>
