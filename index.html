@@ -175,7 +175,7 @@
 .ed-ing-row{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid #e5e5ea;background:#fff}
 .ed-ing-row:last-child{border-bottom:none}
 .ed-ing-qty{width:55px;border:none;background:none;font-size:14px;color:#1c1c1e;font-family:inherit;outline:none;text-align:right}
-.ed-ing-unit{width:65px;border:none;background:none;font-size:13px;color:#8e8e93;font-family:inherit;outline:none;text-align:center}
+.ed-ing-unit{width:72px;border:none;background:none;font-size:13px;color:#8e8e93;font-family:inherit;outline:none;text-align:center;text-align-last:center;appearance:none;-webkit-appearance:none;cursor:pointer}
 .ed-ing-name{flex:1;border:none;background:none;font-size:14px;color:#1c1c1e;font-family:inherit;outline:none}
 .ed-ing-del{width:22px;height:22px;border-radius:50%;background:#ff3b30;color:#fff;border:none;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .ed-cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 4px;background:#f7f7f7;border-bottom:1px solid #e5e5ea}
@@ -287,6 +287,8 @@ let rawRecipeMap = {};   // {id: full raw JSON recipe}
 
 const CUISINES   = ['Indian','Mexican','Sri Lankan','Asian','Western','Cocktails'];
 const CATEGORIES = ['Biryani','Bowl','Bread','Breakfast','Brunch','Burger','Cake','Cocktail','Condiment','Curry','Dal','Dessert','Dip','Drinks','Gravy','Juice','Noodles','Pancakes','Pasta','Pickle','Pizza','Raita','Rice','Roti','Salad','Sandwich','Snack','Soup','Starter','Stir Fry','Tacos','Wrap','Other'];
+// Fixed list of units for the ingredient editor dropdown. Add new ones here if you need them.
+const UNITS = ['g','kg','ml','l','tsp','tbsp','cup','clove','piece','serving','pinch','dash','bunch','sprig','slice','can'];
 const CAT_ORDER  = ['Vegetables','Legumes/Dals','Grains/Flour','Dairy','Nuts/Coconut','Spices (Powder)','Spices (Whole/Seeds)','Fresh Aromatics','Oils/Fats','Alcohol/Cocktail','Citrus/Acid','Liquids','Fruits','Salt/Seasonings','Other'];
 
 function adaptRecipes(raw) {
@@ -692,10 +694,19 @@ function renderEdIngredients(){
     ${(group.items||[]).map((item,ii)=>`
       <div class="ed-ing-row" id="ing-${gi}-${ii}">
         <input class="ed-ing-qty" type="text" placeholder="qty" value="${esc(item.quantity||'')}" oninput="edUpdateIng(${gi},${ii},'quantity',this.value)">
-        <input class="ed-ing-unit" type="text" placeholder="unit" value="${esc(item.unit||'')}" oninput="edUpdateIng(${gi},${ii},'unit',this.value)">
+        <select class="ed-ing-unit" onchange="edUpdateIng(${gi},${ii},'unit',this.value)">${unitOptions(item.unit)}</select>
         <input class="ed-ing-name" type="text" placeholder="ingredient" value="${esc(item.name||'')}" oninput="edUpdateIng(${gi},${ii},'name',this.value)">
         <button class="ed-ing-del" onclick="edRemoveIng(${gi},${ii})">×</button>
       </div>`).join('')}`).join('');
+}
+
+// Builds the <option> list for the unit dropdown. If a recipe already has a unit
+// that is not in UNITS, it is kept as an extra option so nothing is lost.
+function unitOptions(current){
+  const cur=(current||'').trim();
+  const list=(cur&&!UNITS.includes(cur))?[...UNITS,cur]:UNITS;
+  return `<option value=""${cur===''?' selected':''}>—</option>`+
+    list.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join('');
 }
 
 function edUpdateIng(gi,ii,field,val){if(edIngredients[gi]?.items?.[ii]) edIngredients[gi].items[ii][field]=val;}
@@ -817,11 +828,10 @@ function buildRecipeFromForm(){
   const liveIngs=JSON.parse(JSON.stringify(edIngredients));
   document.querySelectorAll('.ed-ing-row').forEach(row=>{
     const parts=row.id.split('-'); const gi=parseInt(parts[1]),ii=parseInt(parts[2]);
-    const inputs=row.querySelectorAll('input');
     if(liveIngs[gi]?.items?.[ii]){
-      liveIngs[gi].items[ii].quantity=inputs[0]?.value||'';
-      liveIngs[gi].items[ii].unit=inputs[1]?.value||'';
-      liveIngs[gi].items[ii].name=inputs[2]?.value||'';
+      liveIngs[gi].items[ii].quantity=row.querySelector('.ed-ing-qty')?.value||'';
+      liveIngs[gi].items[ii].unit=row.querySelector('.ed-ing-unit')?.value||'';
+      liveIngs[gi].items[ii].name=row.querySelector('.ed-ing-name')?.value||'';
     }
   });
   const cleanIngs=liveIngs.map(g=>({...g,items:g.items.filter(i=>i.name.trim())})).filter(g=>g.items.length);
