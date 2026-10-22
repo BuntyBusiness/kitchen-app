@@ -200,7 +200,11 @@
 .ed-step-row{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:1px solid #e5e5ea;background:#fff}
 .ed-step-row:last-child{border-bottom:none}
 .ed-step-num{width:22px;height:22px;border-radius:50%;background:var(--app-accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-.ed-step-text{flex:1;font-size:13.5px;color:#1c1c1e;line-height:1.5;padding:2px 0}
+.ed-step-text{flex:1;width:100%;font-size:14px;color:#1c1c1e;line-height:1.5;padding:4px 8px;font-family:inherit;border:1px solid #e5e5ea;border-radius:8px;background:#fafafa;resize:none;overflow:hidden;outline:none;min-height:40px}
+.ed-step-text:focus{border-color:var(--app-accent);background:#fff}
+.ed-step-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.ed-step-tools{display:flex;gap:14px;align-items:center}
+.ed-step-merge{background:none;border:none;color:var(--app-accent);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;padding:2px 0;-webkit-tap-highlight-color:transparent}
 .ed-step-del{width:20px;height:20px;border-radius:50%;background:#ff3b30;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;-webkit-tap-highlight-color:transparent}
 .ed-steps-empty{font-size:12px;color:#aeaeb2;text-align:center;padding:14px;font-style:italic}
 
@@ -626,6 +630,7 @@ function openEditor(r){
   document.getElementById('editorTitle').textContent=editorRecipe?'Edit Recipe':'New Recipe';
   renderEditorBody();
   editorOverlay.style.display='flex';
+  autosizeAllSteps();
   document.body.style.overflow='hidden';
 }
 
@@ -669,7 +674,7 @@ function renderEditorBody(){
       ${renderEdStepsList()}
       <div class="steps-paste-wrap">
         <textarea class="steps-paste-ta" id="stepsPasteArea" placeholder="Paste or type steps here — one per line, or numbered like:&#10;1. Rinse the dal&#10;2. Heat oil in a pan&#10;3. Add the spices…"></textarea>
-        <p class="steps-paste-hint">Each line becomes a step. Numbers and dots are stripped automatically.</p>
+        <p class="steps-paste-hint">Tap a step above to edit its text. Each line you paste here becomes a new step. Numbers and dots are stripped automatically.</p>
         <div class="steps-paste-actions">
           <button class="steps-paste-btn steps-paste-convert" onclick="convertPastedSteps()">Convert to steps</button>
           <button class="steps-paste-btn steps-paste-clear" onclick="clearPasteArea()">Clear</button>
@@ -681,7 +686,7 @@ function renderEditorBody(){
     <div style="height:20px"></div>`;
 }
 
-function esc(s){return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
 
 // ── Ingredient editor ─────────────────────────────────────────────────────────
 function renderEdIngredients(){
@@ -732,13 +737,35 @@ function refreshEdIngredients(){
 
 // ── Steps paste-and-convert ───────────────────────────────────────────────────
 function renderEdStepsList(){
-  if(!edSteps.length) return `<div class="ed-steps-empty" id="stepsEmptyMsg">Steps added via the box below will appear here.</div>`;
+  if(!edSteps.length) return `<div class="ed-steps-empty" id="stepsEmptyMsg">No steps yet. Add some with the box below.</div>`;
   return edSteps.map((s,idx)=>`
     <div class="ed-step-row" id="ed-step-${idx}">
       <div class="ed-step-num">${idx+1}</div>
-      <div class="ed-step-text">${esc(s.instruction||'')}</div>
+      <div class="ed-step-main">
+        <textarea class="ed-step-text" rows="1" oninput="edUpdateStep(${idx},this.value);autosize(this)">${esc(s.instruction||'')}</textarea>
+        ${idx>0?`<div class="ed-step-tools"><button class="ed-step-merge" onclick="edMergeStepUp(${idx})">↑ Merge into step ${idx}</button></div>`:''}
+      </div>
       <button class="ed-step-del" onclick="edRemoveStep(${idx})">×</button>
     </div>`).join('');
+}
+
+// Make a text box just tall enough to show all its text
+function autosize(el){el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
+function autosizeAllSteps(){document.querySelectorAll('.ed-step-text').forEach(autosize);}
+
+// Save what is typed in a step into the list
+function edUpdateStep(idx,val){if(edSteps[idx]) edSteps[idx].instruction=val;}
+
+// Join step idx onto the end of the step above it
+function edMergeStepUp(idx){
+  if(idx<1||!edSteps[idx]) return;
+  const above=(edSteps[idx-1].instruction||'').trim();
+  const here=(edSteps[idx].instruction||'').trim();
+  edSteps[idx-1].instruction=[above,here].filter(Boolean).join(' ');
+  edSteps.splice(idx,1);
+  edSteps.forEach((st,i)=>st.step=i+1);
+  refreshEdSteps();
+  showToast(`Steps ${idx} and ${idx+1} merged`);
 }
 
 function convertPastedSteps(){
@@ -771,7 +798,11 @@ function refreshEdSteps(){
   const grp=document.getElementById('ed-steps-group');
   if(!grp) return;
   const pasteWrap=grp.querySelector('.steps-paste-wrap');
+  const pasted=document.getElementById('stepsPasteArea')?.value||'';
   grp.innerHTML=renderEdStepsList()+(pasteWrap?pasteWrap.outerHTML:'');
+  const ta=document.getElementById('stepsPasteArea');
+  if(ta) ta.value=pasted;
+  autosizeAllSteps();
 }
 
 // ── Delete ────────────────────────────────────────────────────────────────────
