@@ -200,7 +200,7 @@
 .ed-step-row{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:1px solid #e5e5ea;background:#fff}
 .ed-step-row:last-child{border-bottom:none}
 .ed-step-num{width:22px;height:22px;border-radius:50%;background:var(--app-accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-.ed-step-text{flex:1;width:100%;font-size:14px;color:#1c1c1e;line-height:1.5;padding:4px 8px;font-family:inherit;border:1px solid #e5e5ea;border-radius:8px;background:#fafafa;resize:none;overflow:hidden;outline:none;min-height:40px}
+.ed-step-text{box-sizing:border-box;flex:1;width:100%;font-size:14px;color:#1c1c1e;line-height:1.5;padding:4px 8px;font-family:inherit;border:1px solid #e5e5ea;border-radius:8px;background:#fafafa;resize:none;overflow:hidden;outline:none;min-height:40px}
 .ed-step-text:focus{border-color:var(--app-accent);background:#fff}
 .ed-step-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .ed-step-tools{display:flex;gap:14px;align-items:center}
@@ -751,7 +751,14 @@ function renderEdStepsList(){
 
 // Make a text box just tall enough to show all its text
 function autosize(el){el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
-function autosizeAllSteps(){document.querySelectorAll('.ed-step-text').forEach(autosize);}
+function autosizeAllSteps(){
+  const run=()=>document.querySelectorAll('.ed-step-text').forEach(autosize);
+  run();
+  requestAnimationFrame(run);        // again once the screen has been drawn
+  setTimeout(run,150);               // and again after the sheet has slid up
+  setTimeout(run,400);
+}
+window.addEventListener('resize',()=>{if(editorOverlay.style.display==='flex') autosizeAllSteps();});
 
 // Save what is typed in a step into the list
 function edUpdateStep(idx,val){if(edSteps[idx]) edSteps[idx].instruction=val;}
