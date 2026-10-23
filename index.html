@@ -200,7 +200,10 @@
 .ed-step-row{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:1px solid #e5e5ea;background:#fff}
 .ed-step-row:last-child{border-bottom:none}
 .ed-step-num{width:22px;height:22px;border-radius:50%;background:var(--app-accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-.ed-step-text{box-sizing:border-box;flex:1;width:100%;font-size:14px;color:#1c1c1e;line-height:1.5;padding:4px 8px;font-family:inherit;border:1px solid #e5e5ea;border-radius:8px;background:#fafafa;resize:none;overflow:hidden;outline:none;min-height:40px}
+.ed-step-grow{display:grid}
+.ed-step-grow::after,.ed-step-text{grid-area:1/1/2/2;box-sizing:border-box;width:100%;font-size:14px;line-height:1.5;font-family:inherit;padding:4px 8px;border:1px solid #e5e5ea;border-radius:8px;margin:0;white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word}
+.ed-step-grow::after{content:attr(data-replicated-value) " ";visibility:hidden;pointer-events:none}
+.ed-step-text{color:#1c1c1e;background:#fafafa;resize:none;overflow:hidden;outline:none;height:auto;min-height:0}
 .ed-step-text:focus{border-color:var(--app-accent);background:#fff}
 .ed-step-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .ed-step-tools{display:flex;gap:14px;align-items:center}
@@ -742,23 +745,17 @@ function renderEdStepsList(){
     <div class="ed-step-row" id="ed-step-${idx}">
       <div class="ed-step-num">${idx+1}</div>
       <div class="ed-step-main">
-        <textarea class="ed-step-text" rows="1" oninput="edUpdateStep(${idx},this.value);autosize(this)">${esc(s.instruction||'')}</textarea>
+        <div class="ed-step-grow" data-replicated-value="${esc(s.instruction||'')}"><textarea class="ed-step-text" rows="1" oninput="edUpdateStep(${idx},this.value);autosize(this)">${esc(s.instruction||'')}</textarea></div>
         ${idx>0?`<div class="ed-step-tools"><button class="ed-step-merge" onclick="edMergeStepUp(${idx})">↑ Merge into step ${idx}</button></div>`:''}
       </div>
       <button class="ed-step-del" onclick="edRemoveStep(${idx})">×</button>
     </div>`).join('');
 }
 
-// Make a text box just tall enough to show all its text
-function autosize(el){el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
-function autosizeAllSteps(){
-  const run=()=>document.querySelectorAll('.ed-step-text').forEach(autosize);
-  run();
-  requestAnimationFrame(run);        // again once the screen has been drawn
-  setTimeout(run,150);               // and again after the sheet has slid up
-  setTimeout(run,400);
-}
-window.addEventListener('resize',()=>{if(editorOverlay.style.display==='flex') autosizeAllSteps();});
+// The grey box grows with its text: a hidden copy of the text sits behind the
+// text box and gives the row its height (pure CSS, no measuring needed)
+function autosize(el){if(el&&el.parentNode) el.parentNode.setAttribute('data-replicated-value',el.value);}
+function autosizeAllSteps(){document.querySelectorAll('.ed-step-text').forEach(autosize);}
 
 // Save what is typed in a step into the list
 function edUpdateStep(idx,val){if(edSteps[idx]) edSteps[idx].instruction=val;}
