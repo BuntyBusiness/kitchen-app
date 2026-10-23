@@ -827,7 +827,7 @@ async function deleteRecipe(id){
   showToast('Deleting…');
   try{
     await ghUpdateWithRetry(raw=>{
-      raw.recipes=raw.recipes.filter(r=>r.id!==String(id));
+      raw.recipes=raw.recipes.filter(r=>String(r.id)!==String(id));
       raw.meta.count=raw.recipes.length;
     });
     const idx=recipes.findIndex(r=>r.id===parseInt(id));
@@ -847,13 +847,18 @@ async function saveRecipe(){
     if(!built.name){showToast('Name is required');btn.disabled=false;btn.textContent='Save';return;}
     const token=localStorage.getItem('gh_pat_token');
     if(!token){
+      if(built.id===null) built.id=Math.max(0,...recipes.map(r=>r.id))+1;
       applyLocalUpdate(built); closeEditor(); applyFilters();
       showToast('Saved locally (no GitHub token)');
       return;
     }
     showToast('Saving to GitHub…');
+    const isNewRecipe=(built.id===null);
     await ghUpdateWithRetry(raw=>{
-      const ei=raw.recipes.findIndex(r=>r.id===built.id);
+      // A new recipe gets its id from the file just downloaded, so two people
+      // adding at once can never receive the same number.
+      if(isNewRecipe) built.id=Math.max(0,...raw.recipes.map(r=>parseInt(r.id)||0))+1;   // renumbered on every retry
+      const ei=raw.recipes.findIndex(r=>String(r.id)===String(built.id));
       if(ei!==-1){raw.recipes[ei]=built;}else{raw.recipes.push(built);}
       raw.meta.count=raw.recipes.length;
     });
@@ -862,25 +867,32 @@ async function saveRecipe(){
   finally{btn.disabled=false;btn.textContent='Save';}
 }
 
+// Plain numbers are stored as numbers ("2" -> 2); things like "1/2" or "2-3" stay as typed
+function storeQty(v){
+  const t=String(v).trim();
+  return /^\d+(\.\d+)?$/.test(t)?Number(t):t;
+}
+
 function buildRecipeFromForm(){
   const isNew=!editorRecipe;
-  const newId=isNew?String(Math.max(0,...recipes.map(r=>r.id))+1):String(editorRecipe.id);
+  const newId=isNew?null:parseInt(editorRecipe.id);   // null = new recipe, numbered when saving
 
   // Capture live ingredient values from DOM
   const liveIngs=JSON.parse(JSON.stringify(edIngredients));
   document.querySelectorAll('.ed-ing-row').forEach(row=>{
     const parts=row.id.split('-'); const gi=parseInt(parts[1]),ii=parseInt(parts[2]);
     if(liveIngs[gi]?.items?.[ii]){
-      liveIngs[gi].items[ii].quantity=row.querySelector('.ed-ing-qty')?.value||'';
+      liveIngs[gi].items[ii].quantity=storeQty(row.querySelector('.ed-ing-qty')?.value||'');
       liveIngs[gi].items[ii].unit=row.querySelector('.ed-ing-unit')?.value||'';
       liveIngs[gi].items[ii].name=row.querySelector('.ed-ing-name')?.value||'';
     }
   });
   const cleanIngs=liveIngs.map(g=>({...g,items:g.items.filter(i=>i.name.trim())})).filter(g=>g.items.length);
-  const cleanSteps=edSteps.filter(s=>(s.instruction||'').trim());
+  const cleanSteps=edSteps.filter(s=>(s.instruction||'').trim()).map((s,i)=>({step:i+1,instruction:s.instruction}));
 
   return {
     id:newId,
+    ...(editorRecipe?.slug?{slug:editorRecipe.slug}:{}),
     name:(document.getElementById('ef-name')?.value||'').trim(),
     source:(document.getElementById('ef-source')?.value||'').trim(),
     cuisine:document.getElementById('ef-cuisine')?.value||'',
