@@ -820,10 +820,10 @@ async function deleteRecipe(id){
   if(!token){showToast('No GitHub token');return;}
   showToast('Deleting…');
   try{
-    const raw=await ghGetFile();
-    raw.recipes=raw.recipes.filter(r=>r.id!==String(id));
-    raw.meta.count=raw.recipes.length;
-    await ghPutFile(raw,raw._sha);
+    await ghUpdateWithRetry(raw=>{
+      raw.recipes=raw.recipes.filter(r=>r.id!==String(id));
+      raw.meta.count=raw.recipes.length;
+    });
     const idx=recipes.findIndex(r=>r.id===parseInt(id));
     if(idx!==-1) recipes.splice(idx,1);
     delete ingredients[parseInt(id)]; delete stepsData[parseInt(id)];
@@ -846,10 +846,11 @@ async function saveRecipe(){
       return;
     }
     showToast('Saving to GitHub…');
-    const raw=await ghGetFile();
-    const ei=raw.recipes.findIndex(r=>r.id===built.id);
-    if(ei!==-1){raw.recipes[ei]=built;}else{raw.recipes.push(built);raw.meta.count=raw.recipes.length;}
-    await ghPutFile(raw,raw._sha);
+    await ghUpdateWithRetry(raw=>{
+      const ei=raw.recipes.findIndex(r=>r.id===built.id);
+      if(ei!==-1){raw.recipes[ei]=built;}else{raw.recipes.push(built);}
+      raw.meta.count=raw.recipes.length;
+    });
     applyLocalUpdate(built); closeEditor(); applyFilters(); showToast('Saved ✓');
   } catch(e){showToast('Save failed: '+e.message);}
   finally{btn.disabled=false;btn.textContent='Save';}
@@ -911,13 +912,33 @@ function applyLocalUpdate(built){
 // ── GitHub helpers ────────────────────────────────────────────────────────────
 async function ghGetFile(){
   const token=localStorage.getItem('gh_pat_token');
-  const url=`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}`;
-  const res=await fetch(url,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}});
+  const url=`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}&_=${Date.now()}`;   // _= makes every request unique so a stale cached copy is never returned
+  const res=await fetch(url,{cache:'no-store',headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}});
   if(!res.ok) throw new Error(`GitHub GET failed: ${res.status}`);
   const meta=await res.json();
   const bytes=Uint8Array.from(atob(meta.content.replace(/\n/g,'')),c=>c.charCodeAt(0));
   const parsed=JSON.parse(new TextDecoder('utf-8').decode(bytes));
   parsed._sha=meta.sha; return parsed;
+}
+// Gets the latest file, applies your change to it, and saves. If GitHub says the
+// file changed in the meantime, it fetches again and retries (up to 4 times).
+async function ghUpdateWithRetry(applyChange){
+  let lastErr;
+  for(let attempt=1;attempt<=4;attempt++){
+    try{
+      const raw=await ghGetFile();
+      applyChange(raw);
+      await ghPutFile(raw,raw._sha);
+      return;
+    }catch(e){
+      lastErr=e;
+      const msg=String(e.message||'');
+      const isMismatch=/does not match|409|sha/i.test(msg);
+      if(!isMismatch||attempt===4) throw e;
+      await new Promise(r=>setTimeout(r,600*attempt));
+    }
+  }
+  throw lastErr;
 }
 async function ghPutFile(data,sha){
   const token=localStorage.getItem('gh_pat_token');
