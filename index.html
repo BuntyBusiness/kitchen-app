@@ -224,7 +224,7 @@
   <div class="container">
     <div class="header-row">
       <div class="header-left">
-        <span class="header-title">FatBoy's Kitchen</span>
+        <span class="header-title">Marion's Kitchen</span>
       </div>
       <div class="header-right">
         <button class="header-btn" onclick="openEditor(null)">＋ New</button>
@@ -292,7 +292,7 @@ let stepsData    = {};   // {id: [{step,instruction}]}
 let rawNutrition = {};   // {id: nutrition obj} — static, never scaled
 let rawRecipeMap = {};   // {id: full raw JSON recipe}
 
-const CUISINES   = ['Indian','Mexican','Sri Lankan','Asian','Western','Cocktails'];
+const CUISINES   = ['Indian','Italian','Mexican','Middle Eastern','Sri Lankan','Asian','Western','Cocktails'];
 const CATEGORIES = ['Biryani','Bowl','Bread','Breakfast','Brunch','Burger','Cake','Cocktail','Condiment','Curry','Dal','Dessert','Dip','Drinks','Gravy','Juice','Noodles','Pancakes','Pasta','Pickle','Pizza','Raita','Rice','Roti','Salad','Sandwich','Snack','Soup','Starter','Stir Fry','Tacos','Wrap','Other'];
 // Fixed list of units for the ingredient editor dropdown. Add new ones here if you need them.
 const UNITS = ['g','kg','ml','l','tsp','tbsp','cup','clove','piece','serving','pinch','dash','bunch','sprig','slice','can'];
@@ -645,8 +645,14 @@ function closeEditor(){
 
 function renderEditorBody(){
   const r=editorRecipe;
-  const cuOpts=CUISINES.map(c=>`<option value="${c}"${r?.cuisine===c?' selected':''}>${c}</option>`).join('');
-  const catOpts=CATEGORIES.map(c=>`<option value="${c}"${r?.category===c?' selected':''}>${c}</option>`).join('');
+  // Form lists = the fixed lists PLUS every value already used by a recipe, so an
+  // existing cuisine or category can never be missing (or silently lost on save).
+  const usedCuisines=recipes.map(x=>x.cuisine).filter(Boolean);
+  const usedCats=recipes.map(x=>x.sub).filter(Boolean);
+  const cuList=[...new Set([...CUISINES,...usedCuisines,r?.cuisine].filter(Boolean))].sort();
+  const catList=[...new Set([...CATEGORIES.filter(c=>c!=='Other'),...usedCats,r?.category].filter(Boolean))].sort().concat('Other');
+  const cuOpts=cuList.map(c=>`<option value="${c}"${r?.cuisine===c?' selected':''}>${c}</option>`).join('');
+  const catOpts=[...new Set(catList)].map(c=>`<option value="${c}"${r?.category===c?' selected':''}>${c}</option>`).join('');
 
   document.getElementById('editorBody').innerHTML=`
     <!-- Details -->
@@ -945,7 +951,7 @@ async function ghPutFile(data,sha){
   const url=`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
   const {_sha,...clean}=data;
   const b64=btoa(unescape(encodeURIComponent(JSON.stringify(clean,null,2))));
-  const body={message:'Update recipes via FatBoy Kitchen app',content:b64,branch:GITHUB_CONFIG.branch};
+  const body={message:'Update recipes via Marion Kitchen app',content:b64,branch:GITHUB_CONFIG.branch};
   if(sha) body.sha=sha;
   const res=await fetch(url,{method:'PUT',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!res.ok){const e=await res.json();throw new Error(e.message||`GitHub PUT failed: ${res.status}`);}
