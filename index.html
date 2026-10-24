@@ -37,20 +37,31 @@
 .course-btn{flex:0 0 auto;font-family:inherit;font-size:12px;font-weight:600;padding:6px 13px;border-radius:var(--r-pill);border:1px solid var(--border2);background:var(--white);color:var(--muted);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s;-webkit-tap-highlight-color:transparent}
 .course-btn.active{background:var(--app-primary);border-color:var(--app-primary);color:#fff}
 .results-info{font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
-.recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:14px}
-.recipe-card{background:var(--white);border:1.5px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;animation:fadeUp .3s ease both}
+.recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:14px}
+.recipe-card{background:var(--white);border:1.5px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:row;align-items:center;gap:12px;padding:10px;transition:border-color .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;animation:fadeUp .3s ease both}
 .recipe-card:hover{border-color:var(--app-accent);box-shadow:0 4px 16px rgba(12,35,64,.1)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.card-img{width:100%;height:130px;object-fit:cover;display:block;background:var(--surface)}
-.card-img-placeholder{width:100%;height:130px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:2rem}
-.card-body{padding:9px 10px 10px;flex:1;display:flex;flex-direction:column}
+.card-thumb{flex:0 0 76px;width:76px;height:76px;border-radius:9px;overflow:hidden;background:var(--surface)}
+.card-img{width:100%;height:100%;object-fit:cover;display:block}
+.card-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+.card-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.card-data{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);line-height:1.2;margin-top:4px}
+.card-data svg{flex-shrink:0;color:var(--app-accent)}
 .card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
 .tag{font-size:8px;font-weight:600;padding:1.5px 6px;border-radius:var(--r-pill);text-transform:uppercase;letter-spacing:.05em}
 .tag-indian{background:#deeaf7;color:#0c447c}.tag-cocktails{background:#f0ede8;color:#5a5750}
 .tag-mexican{background:#faeeda;color:#633806}.tag-sri-lankan{background:#e2f0d6;color:#27500a}
 .tag-asian{background:#eeedfe;color:#3c3489}.tag-western{background:#f5e8f5;color:#5a0c5a}
 .tag-sub{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
-.card-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:6px;flex:1}
+.card-name{font-size:16px;font-weight:700;color:var(--app-primary);line-height:1.25;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* Last cooked row in the recipe pop-up */
+.cooked-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:12px}
+.cooked-lbl{font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.cooked-date{font-family:inherit;font-size:14px;color:var(--text);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;outline:none;min-width:130px}
+.cooked-date:focus{border-color:var(--app-accent)}
+.cooked-clear{background:none;border:none;color:var(--muted);font-family:inherit;font-size:11px;cursor:pointer;padding:2px 4px;-webkit-tap-highlight-color:transparent}
+.cooked-btn{margin-left:auto;font-family:inherit;font-size:12px;font-weight:600;background:var(--app-primary);color:#fff;border:none;border-radius:var(--r-pill);padding:7px 14px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.cooked-btn:disabled,.cooked-date:disabled{opacity:.5;cursor:default}
 .card-macros{display:flex;gap:6px;margin-top:auto}
 .macro-item{flex:1;text-align:center;background:var(--surface);border-radius:6px;padding:4px 2px}
 .macro-val{font-size:12px;font-weight:600;color:var(--app-primary);line-height:1}
@@ -307,6 +318,7 @@ function adaptRecipes(raw) {
       servings:r.servings, img:r.imageUrl, link:r.pageLink, source:r.source||'',
       cal:r.nutrition?.calories, protein:r.nutrition?.protein_g,
       carb:r.nutrition?.carbs_g, fat:r.nutrition?.fat_g,
+      lastCooked:r.lastCooked||'',
     });
     ingredients[id] = (r.ingredients||[]).flatMap(g =>
       (g.items||[]).map(i => ({
@@ -383,6 +395,22 @@ const cuisineTagClass = {'Indian':'tag-indian','Cocktails':'tag-cocktails','Mexi
 const cuisineEmoji    = {'Indian':'🍛','Cocktails':'🍹','Mexican':'🌮','Sri Lankan':'🥥','Asian':'🥢','Western':'🍽️'};
 function isPlaceholder(url){return !url||url.includes('recipe_image_placeholder')}
 
+// ─── LAST COOKED: icons and date helpers ─────────────────────────────────────
+const ICON_FLAME='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.4 1 2.2 1.8 2.5C10.5 8.5 11 5.5 12 3z"/></svg>';
+const ICON_CAL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// "2026-10-24" -> "24 Oct 2026" (read as plain text, so time zones cannot shift the day)
+function formatDate(s){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');
+  if(!m) return s||'';
+  return `${parseInt(m[3])} ${MONTHS[parseInt(m[2])-1]||''} ${m[1]}`;
+}
+// Today's date on this device, as YYYY-MM-DD
+function todayStr(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
 // ─── RENDER CARDS ─────────────────────────────────────────────────────────────
 function renderCards(list) {
   recipeGrid.innerHTML='';
@@ -395,17 +423,13 @@ function renderCards(list) {
     card.className='recipe-card';
     card.style.animationDelay=`${Math.min(i*.025,.35)}s`;
     const tc=cuisineTagClass[r.cuisine]||'tag-indian', em=cuisineEmoji[r.cuisine]||'🍴';
+    const hasCal=(r.cal!==null&&r.cal!==undefined&&r.cal!=='');
     card.innerHTML=`
-      ${isPlaceholder(r.img)?`<div class="card-img-placeholder">${em}</div>`:`<img class="card-img" src="${r.img}" alt="${r.name}" onerror="this.parentNode.innerHTML='<div class=card-img-placeholder>${em}</div>'">`}
+      <div class="card-thumb">${isPlaceholder(r.img)?`<div class="card-img-placeholder">${em}</div>`:`<img class="card-img" src="${r.img}" alt="${esc(r.name)}" onerror="this.parentNode.innerHTML='<div class=card-img-placeholder>${em}</div>'">`}</div>
       <div class="card-body">
-        <div class="card-tags"><span class="tag ${tc}">${r.cuisine}</span>${r.sub?`<span class="tag tag-sub">${r.sub}</span>`:''}</div>
         <div class="card-name">${r.name}</div>
-        <div class="card-macros">
-          <div class="macro-item"><div class="macro-val hl">${r.cal??'—'}</div><div class="macro-lbl">kcal</div></div>
-          <div class="macro-item"><div class="macro-val">${r.protein??'—'}g</div><div class="macro-lbl">protein</div></div>
-          <div class="macro-item"><div class="macro-val">${r.carb??'—'}g</div><div class="macro-lbl">carbs</div></div>
-          <div class="macro-item"><div class="macro-val">${r.fat??'—'}g</div><div class="macro-lbl">fat</div></div>
-        </div>
+        ${hasCal?`<div class="card-data">${ICON_FLAME}<span>${r.cal} kcal</span></div>`:''}
+        ${r.lastCooked?`<div class="card-data">${ICON_CAL}<span>${formatDate(r.lastCooked)}</span></div>`:''}
       </div>`;
     card.addEventListener('click',()=>openModal(r));
     recipeGrid.appendChild(card);
@@ -542,9 +566,53 @@ function renderMethodTab(r) {
     </div>`;
 }
 
+// Last cooked: editable date + "Cooked today" button (inside the recipe pop-up)
+function renderCookedRow(r){
+  const d=r.lastCooked||'';
+  return `<span class="cooked-lbl">Last cooked</span>
+    <input class="cooked-date" id="cookedDate" type="date" max="${todayStr()}" value="${d}" onchange="setLastCooked(this.value)">
+    ${d?`<button class="cooked-clear" onclick="setLastCooked('')">✕ Clear</button>`:''}
+    <button class="cooked-btn" id="cookedBtn" onclick="setLastCooked(todayStr())">✓ Cooked today</button>`;
+}
+
+// Saves ONLY the lastCooked date of one recipe, on top of the freshly downloaded file
+// (same retry saver as everything else), so nothing else in the recipe can be changed.
+async function setLastCooked(dateStr){
+  const r=currentRecipe; if(!r) return;
+  const id=r.id;
+  dateStr=(dateStr||'').trim();
+  if(dateStr&&!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)){showToast('Please pick a valid date');return;}
+  const row=document.getElementById('cookedRow');
+  row?.querySelectorAll('button,input').forEach(el=>el.disabled=true);
+  try{
+    const token=localStorage.getItem('gh_pat_token');
+    if(token){
+      showToast('Saving…');
+      await ghUpdateWithRetry(raw=>{
+        const rr=raw.recipes.find(x=>String(x.id)===String(id));
+        if(!rr) throw new Error('Recipe not found in the file');
+        if(dateStr) rr.lastCooked=dateStr; else delete rr.lastCooked;
+      });
+    }
+    // update what is on screen
+    const li=recipes.findIndex(x=>x.id===id);
+    if(li!==-1) recipes[li].lastCooked=dateStr;
+    if(rawRecipeMap[id]){ if(dateStr) rawRecipeMap[id].lastCooked=dateStr; else delete rawRecipeMap[id].lastCooked; }
+    showToast(token?(dateStr?'Saved ✓':'Date cleared ✓'):'Saved locally (no GitHub token)');
+    applyFilters();
+  }catch(e){
+    showToast('Save failed: '+e.message);
+  }finally{
+    const cur=recipes.find(x=>x.id===id);
+    const rowNow=document.getElementById('cookedRow');
+    if(cur&&rowNow&&currentRecipe&&currentRecipe.id===id) rowNow.innerHTML=renderCookedRow(cur);
+  }
+}
+
 function renderModalBody(r, scale) {
   const steps=stepsData[r.id]||[];
   modalBody.innerHTML=`
+    <div class="cooked-row" id="cookedRow">${renderCookedRow(r)}</div>
     <div class="modal-tab-bar">
       <button class="modal-tab-btn${activeTab==='ingredients'?' active':''}" onclick="switchTab('ingredients',this)">🥄 Ingredients</button>
       <button class="modal-tab-btn${activeTab==='method'?' active':''}" onclick="switchTab('method',this)">📋 Method${steps.length?` (${steps.length})`:''}</button>
@@ -915,6 +983,8 @@ function buildRecipeFromForm(){
     ingredients:cleanIngs,
     steps:cleanSteps,
     linkedRecipes:editorRecipe?.linkedRecipes||[],
+    // lastCooked is not in the form, so carry it over or it would be lost on every edit-save
+    ...(editorRecipe?.lastCooked?{lastCooked:editorRecipe.lastCooked}:{}),
   };
 }
 
@@ -926,6 +996,7 @@ function applyLocalUpdate(built){
     servings:built.servings, img:built.imageUrl, link:built.pageLink, source:built.source,
     cal:built.nutrition?.calories, protein:built.nutrition?.protein_g,
     carb:built.nutrition?.carbs_g, fat:built.nutrition?.fat_g,
+    lastCooked:built.lastCooked||'',
   };
   if(ei!==-1){recipes[ei]=adapted;}else{recipes.push(adapted);}
   ingredients[id]=(built.ingredients||[]).flatMap(g=>(g.items||[]).map(i=>({
