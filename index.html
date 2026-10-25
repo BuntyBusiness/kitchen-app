@@ -20,18 +20,44 @@
 }
 
 /* ── Grid & filters ── */
-.filters-bar{background:var(--white);border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters-bar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 .filter-group{display:flex;align-items:center;gap:5px}
 .filter-lbl{font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
 .filter-select{font-family:inherit;font-size:11px;color:var(--text);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 22px 4px 8px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;transition:border-color .15s}
 .filter-select:focus{border-color:var(--app-accent)}
 .search-wrap{flex:1;min-width:160px;position:relative}
-.search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:.35;pointer-events:none}
-.search-input{width:100%;font-family:inherit;font-size:11px;color:var(--text);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 8px 4px 26px;outline:none;transition:border-color .15s}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.45;pointer-events:none}
+.search-input{width:100%;box-sizing:border-box;height:44px;font-family:inherit;font-size:14px;color:var(--text);background:var(--white);border:1px solid var(--border2);border-radius:10px;padding:0 12px 0 36px;outline:none;transition:border-color .15s}
 .search-input:focus{border-color:var(--app-accent)}
 .search-input::placeholder{color:var(--faint)}
 .clear-btn{font-family:inherit;font-size:11px;font-weight:500;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--muted);transition:background .15s}
 .clear-btn:hover{background:var(--border);color:var(--text)}
+.clear-btn{min-height:44px;border-radius:10px;padding:0 12px;font-size:12px;background:none;border-color:transparent;color:var(--app-accent);font-weight:600}
+/* Round filter button + number badge */
+.filter-btn-wrap{position:relative;flex:0 0 44px}
+.filter-btn{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--app-primary);background:var(--white);color:var(--app-primary);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s}
+.filter-btn.on{background:var(--app-primary);color:#fff}
+.filter-btn circle{fill:var(--white)}
+.filter-btn.on circle{fill:var(--app-primary)}
+.filter-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;box-sizing:border-box;padding:0 5px;border-radius:999px;background:var(--app-accent);color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center;border:2px solid var(--bg);pointer-events:none}
+.filter-badge.show{display:flex}
+/* Filter sheet */
+.fs-overlay{display:none;position:fixed;inset:0;z-index:1500;background:rgba(58,16,32,.45);backdrop-filter:blur(8px);justify-content:center;align-items:flex-start}
+.fs-sheet{background:#f2f2f7;width:100%;max-width:560px;height:94vh;margin-top:6vh;border-top-left-radius:14px;border-top-right-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.2);animation:iosSheetSlideUp .28s cubic-bezier(.1,.76,.55,.94)}
+.fs-nav{background:#fff;padding:6px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #c6c6c8;flex-shrink:0}
+.fs-nav-title{font-size:16px;font-weight:600;color:#1c1c1e}
+.fs-nav-btn{background:none;border:none;font-family:inherit;font-size:15px;color:var(--app-accent);cursor:pointer;padding:0;min-height:44px;min-width:64px;-webkit-tap-highlight-color:transparent}
+.fs-nav-btn.bold{font-weight:600;text-align:right}
+.fs-nav-btn:first-child{text-align:left}
+.fs-body{flex:1;overflow-y:auto;padding:0 16px 24px;-webkit-overflow-scrolling:touch}
+.fs-group-title{font-size:12px;color:#6c6c70;text-transform:uppercase;margin:18px 0 8px 8px;letter-spacing:.3px}
+.fs-chips{background:#fff;border-radius:10px;padding:14px;display:flex;flex-wrap:wrap;gap:8px}
+.fs-chip{font-family:inherit;font-size:14px;font-weight:600;padding:8px 14px;min-height:40px;border-radius:999px;border:1px solid #d9cfc6;background:#fff;color:#4a3a3a;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,color .12s}
+.fs-chip.on{background:var(--app-primary);border-color:var(--app-primary);color:#fff}
+.fs-chip.on::before{content:'✓ '}
+.fs-empty{font-size:13px;color:#8e8e93;font-style:italic}
+.fs-foot{flex-shrink:0;background:#fff;border-top:1px solid #c6c6c8;padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
+.fs-show{width:100%;min-height:50px;border:none;border-radius:12px;background:var(--app-primary);color:#fff;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .course-bar{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0 10px;margin-bottom:2px;scrollbar-width:none}
 .course-bar::-webkit-scrollbar{display:none}
 .course-btn{flex:0 0 auto;font-family:inherit;font-size:12px;font-weight:600;padding:6px 13px;border-radius:var(--r-pill);border:1px solid var(--border2);background:var(--white);color:var(--muted);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s;-webkit-tap-highlight-color:transparent}
@@ -252,16 +278,35 @@
 
 <div class="container" id="app">
   <div class="sec-lbl">Browse recipes</div>
-  <div class="course-bar" id="courseBar"></div>
   <div class="filters-bar">
     <div class="search-wrap">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="#666" stroke-width="1.4"/><line x1="9" y1="9" x2="11.5" y2="11.5" stroke="#666" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="#666" stroke-width="1.4"/><line x1="9" y1="9" x2="11.5" y2="11.5" stroke="#666" stroke-width="1.4" stroke-linecap="round"/></svg>
       <input class="search-input" id="searchInput" type="text" placeholder="Search dishes or ingredients…">
     </div>
     <button class="clear-btn" id="clearBtn">Clear</button>
+    <div class="filter-btn-wrap">
+      <button class="filter-btn" id="filterBtn" aria-label="Open filters" onclick="openFilterSheet()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.3"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2.3"/></svg>
+      </button>
+      <span class="filter-badge" id="filterBadge"></span>
+    </div>
   </div>
+  <div class="course-bar" id="courseBar"></div>
   <div class="results-info" id="resultsInfo"></div>
   <div class="recipe-grid" id="recipeGrid"></div>
+</div>
+
+<!-- Filter sheet (slide-up, chips) -->
+<div class="fs-overlay" id="filterOverlay">
+  <div class="fs-sheet">
+    <div class="fs-nav">
+      <button class="fs-nav-btn" onclick="clearSheetFilters()">Clear all</button>
+      <div class="fs-nav-title">Filters</div>
+      <button class="fs-nav-btn bold" onclick="closeFilterSheet()">Done</button>
+    </div>
+    <div class="fs-body" id="filterBody"></div>
+    <div class="fs-foot"><button class="fs-show" id="filterShowBtn" onclick="closeFilterSheet()"></button></div>
+  </div>
 </div>
 
 <!-- View modal — wraps in .modal-scroll so hero+tabs stay sticky-like -->
@@ -304,6 +349,10 @@ const CUISINES   = ['Indian','Italian','Mexican','Middle Eastern','Sri Lankan','
 // Course = which part of the meal (exactly one per recipe). Order = order of the buttons on the Browse bar.
 const COURSES    = ['Main Course','Drinks','Breakfast','Snack','Dessert','Bread','Soup','Salad','Side','Sauce','Other'];
 let   activeCourse = 'All';
+// Filter sheet selections (Category and Cuisine chips). Within one group any ticked chip matches;
+// across groups every group with a tick must match.
+const activeCats     = new Set();
+const activeCuisines = new Set();
 // Category = type of dish (extra tag; used in the filter sheet later)
 const CATEGORIES = ['Beans / Lentils','Biryani','Bowl','Burger','Cake','Cocktail','Curry','Dal','Dip','Gravy','Juice','Noodles','Pancakes','Pasta','Pickle','Pizza','Rice / Grains','Sauce','Other'];
 // Fixed list of units for the ingredient editor dropdown. Add new ones here if you need them.
@@ -440,6 +489,8 @@ function filterRecipes(){
   const q=searchInput.value.toLowerCase().trim();
   return recipes.filter(r=>{
     if(activeCourse!=='All'&&r.course!==activeCourse) return false;
+    if(activeCats.size&&!activeCats.has(r.sub)) return false;
+    if(activeCuisines.size&&!activeCuisines.has(r.cuisine)) return false;
     if(q){
       const ings=(ingredients[r.id]||[]).map(i=>i.name.toLowerCase()).join(' ');
       if(!r.name.toLowerCase().includes(q)&&!r.cuisine.toLowerCase().includes(q)&&!r.sub.toLowerCase().includes(q)&&!(r.course||'').toLowerCase().includes(q)&&!ings.includes(q)) return false;
@@ -447,9 +498,62 @@ function filterRecipes(){
     return true;
   });
 }
-function applyFilters(){renderCards(filterRecipes());}
+function applyFilters(){renderCards(filterRecipes());updateFilterBtn();}
 searchInput.addEventListener('input',applyFilters);
-document.getElementById('clearBtn').addEventListener('click',()=>{searchInput.value='';setCourse('All');});
+// Clear = empty the search box, the Course buttons (back to All) AND the filter-sheet chips
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  searchInput.value=''; activeCats.clear(); activeCuisines.clear(); setCourse('All');
+});
+
+// ─── FILTER SHEET ─────────────────────────────────────────────────────────────
+// The round button shows only a number: how many chips are ticked in the sheet.
+function updateFilterBtn(){
+  const n=activeCats.size+activeCuisines.size;
+  const b=document.getElementById('filterBadge'), btn=document.getElementById('filterBtn');
+  if(b){ b.textContent=n; b.classList.toggle('show',n>0); }
+  if(btn){ btn.classList.toggle('on',n>0); btn.setAttribute('aria-label',n?`Open filters, ${n} active`:'Open filters'); }
+}
+function chipHTML(type,val,on){
+  return `<button class="fs-chip${on?' on':''}" data-type="${type}" data-val="${esc(val)}" onclick="toggleFilterChip(this)">${esc(val)}</button>`;
+}
+// Chips come from the values the recipes really use, so the sheet never offers an empty choice
+function renderFilterSheet(){
+  const cats=[...new Set(recipes.map(r=>r.sub).filter(Boolean))].sort((a,b)=>a==='Other'?1:b==='Other'?-1:a.localeCompare(b));
+  const cuis=[...new Set(recipes.map(r=>r.cuisine).filter(Boolean))].sort();
+  document.getElementById('filterBody').innerHTML=`
+    <div class="fs-group-title">Category</div>
+    <div class="fs-chips">${cats.length?cats.map(c=>chipHTML('cat',c,activeCats.has(c))).join(''):'<span class="fs-empty">No categories yet</span>'}</div>
+    <div class="fs-group-title">Cuisine</div>
+    <div class="fs-chips">${cuis.length?cuis.map(c=>chipHTML('cuisine',c,activeCuisines.has(c))).join(''):'<span class="fs-empty">No cuisines yet</span>'}</div>`;
+  updateFilterShowBtn();
+}
+function updateFilterShowBtn(){
+  const n=filterRecipes().length;
+  const b=document.getElementById('filterShowBtn');
+  if(b) b.textContent=`Show ${n} recipe${n!==1?'s':''}`;
+}
+// Ticking a chip changes the list behind the sheet straight away; the chips themselves are not rebuilt
+function toggleFilterChip(el){
+  const set=el.dataset.type==='cat'?activeCats:activeCuisines, v=el.dataset.val;
+  set.has(v)?set.delete(v):set.add(v);
+  el.classList.toggle('on',set.has(v));
+  applyFilters(); updateFilterShowBtn();
+}
+function clearSheetFilters(){
+  activeCats.clear(); activeCuisines.clear();
+  document.querySelectorAll('#filterBody .fs-chip').forEach(c=>c.classList.remove('on'));
+  applyFilters(); updateFilterShowBtn();
+}
+function openFilterSheet(){
+  renderFilterSheet();
+  document.getElementById('filterOverlay').style.display='flex';
+  document.body.style.overflow='hidden';
+}
+function closeFilterSheet(){
+  document.getElementById('filterOverlay').style.display='none';
+  document.body.style.overflow='';
+}
+document.getElementById('filterOverlay').addEventListener('click',e=>{if(e.target.id==='filterOverlay')closeFilterSheet();});
 
 // Course buttons: All first, then the course list; the bar scrolls sideways.
 // Tapping only switches the highlight (the buttons are not rebuilt, so the bar keeps its scroll position).
@@ -686,7 +790,7 @@ function closeModal(){
 
 document.getElementById('modalClose').addEventListener('click',closeModal);
 overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeEditor();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeFilterSheet();closeModal();closeEditor();}});
 
 // ─── EDITOR ───────────────────────────────────────────────────────────────────
 let editorRecipe  = null;
