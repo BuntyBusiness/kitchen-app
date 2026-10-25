@@ -140,10 +140,10 @@
 .nut-panel-hdr{background:var(--app-primary2);padding:6px 12px;display:flex;align-items:center;justify-content:space-between}
 .nut-panel-lbl{font-size:9.5px;font-weight:600;color:var(--app-on-primary2);text-transform:uppercase;letter-spacing:.07em}
 .nut-panel-sub{font-size:9px;color:var(--app-on-primary3)}
-.nut-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.nut-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
 .nut-cell{padding:8px 6px;text-align:center;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2)}
-.nut-cell:nth-child(4n){border-right:none}
-.nut-cell:nth-last-child(-n+4){border-bottom:none}
+.nut-cell:nth-child(3n){border-right:none}
+.nut-cell:nth-last-child(-n+3){border-bottom:none}
 .nut-val{font-size:13px;font-weight:600;color:var(--app-primary);line-height:1}
 .nut-val.hl{color:var(--app-accent)}
 .nut-lbl{font-size:8px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
@@ -212,6 +212,10 @@
 .ios-danger-block{margin-top:24px;padding:0 8px}
 .ios-danger-btn{width:100%;text-align:center;background:#fff;padding:12px;border-radius:10px;border:1px solid #e5e5ea}
 
+/* Nutrition rows in the edit form */
+.ios-unit{font-size:13px;color:#8e8e93;min-width:32px;flex-shrink:0}
+.ios-input.nut-in{text-align:right}
+
 /* ── Ingredient editor rows ── */
 .ed-ing-row{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid #e5e5ea;background:#fff}
 .ed-ing-row:last-child{border-bottom:none}
@@ -270,7 +274,6 @@
       <div class="header-right">
         <button class="header-btn" onclick="openEditor(null)">＋ New</button>
         <button class="header-btn" onclick="promptForGitToken()" title="Set GitHub token">🔑</button>
-        <span class="header-badge" id="recipeCountBadge"></span>
       </div>
     </div>
   </div>
@@ -463,9 +466,10 @@ function todayStr(){
 // ─── RENDER CARDS ─────────────────────────────────────────────────────────────
 function renderCards(list) {
   recipeGrid.innerHTML='';
-  resultsInfo.textContent=`${list.length} recipe${list.length!==1?'s':''} found`;
-  const badge=document.getElementById('recipeCountBadge');
-  if(badge) badge.textContent=`${recipes.length} recipes`;
+  // "28 recipes" with nothing filtered, "5 of 28 recipes" when a search or filter is on
+  resultsInfo.textContent=(list.length===recipes.length)
+    ?`${recipes.length} recipe${recipes.length!==1?'s':''}`
+    :`${list.length} of ${recipes.length} recipe${recipes.length!==1?'s':''}`;
   if(!list.length){recipeGrid.innerHTML='<div class="no-results">No recipes match — try a different search or filter.</div>';return;}
   list.forEach((r,i)=>{
     const card=document.createElement('div');
@@ -595,10 +599,13 @@ function renderModalHero(r) {
     </div>`;
 }
 
-// Nutrition tab — static, never affected by scaler
+// Nutrition tab — static, never affected by scaler. A value that is not recorded shows as a dash.
+function nutCell(v,unit,label,hl){
+  const has=(v!==null&&v!==undefined&&v!=='');
+  return `<div class="nut-cell"><div class="nut-val${hl?' hl':''}">${has?v+unit:'—'}</div><div class="nut-lbl">${label}</div></div>`;
+}
 function renderNutritionTab(r) {
-  const nut=rawNutrition[r.id];
-  if(!nut||!Object.keys(nut).length) return `<div class="no-steps">No nutrition data recorded yet.<br>This will be auto-calculated from ingredients in a future update.</div>`;
+  const nut=rawNutrition[r.id]||{};
   return `
     <div class="nut-panel" style="margin-top:4px">
       <div class="nut-panel-hdr">
@@ -606,17 +613,17 @@ function renderNutritionTab(r) {
         <span class="nut-panel-sub">per serving · recipe makes ${r.servings}</span>
       </div>
       <div class="nut-grid">
-        <div class="nut-cell"><div class="nut-val hl">${nut.calories??'—'}</div><div class="nut-lbl">Calories</div></div>
-        <div class="nut-cell"><div class="nut-val">${nut.protein_g??'—'}g</div><div class="nut-lbl">Protein</div></div>
-        <div class="nut-cell"><div class="nut-val">${nut.carbs_g??'—'}g</div><div class="nut-lbl">Carbs</div></div>
-        <div class="nut-cell"><div class="nut-val">${nut.fat_g??'—'}g</div><div class="nut-lbl">Fat</div></div>
-        <div class="nut-cell"><div class="nut-val">${nut.fiber_g??'—'}g</div><div class="nut-lbl">Fiber</div></div>
-        <div class="nut-cell"><div class="nut-val">${nut.sugars_g??'—'}g</div><div class="nut-lbl">Sugar</div></div>
-        <div class="nut-cell"><div class="nut-val">${nut.saturatedFat_g??'—'}g</div><div class="nut-lbl">Sat Fat</div></div>
-        <div class="nut-cell"><div class="nut-val">${nut.sodium_mg??'—'}mg</div><div class="nut-lbl">Sodium</div></div>
+        ${nutCell(nut.calories,'','Calories',true)}
+        ${nutCell(nut.protein_g,'g','Protein')}
+        ${nutCell(nut.carbs_g,'g','Carbs')}
+        ${nutCell(nut.fat_g,'g','Fat')}
+        ${nutCell(nut.fiber_g,'g','Fiber')}
+        ${nutCell(nut.sugars_g,'g','Sugar')}
+        ${nutCell(nut.saturatedFat_g,'g','Sat Fat')}
+        ${nutCell(nut.sodium_mg,'mg','Sodium')}
+        ${nutCell(nut.cholesterol_mg,'mg','Cholesterol')}
       </div>
-    </div>
-    <p style="font-size:10px;color:var(--faint);text-align:center;margin-top:10px">Values per serving as recorded. Will auto-calculate from ingredients in Phase 3.</p>`;
+    </div>`;
 }
 
 function renderIngredientsTab(r, scale) {
@@ -872,8 +879,35 @@ function renderEditorBody(){
       </div>
     </div>
 
+    <!-- Nutrition (per serving) -->
+    <div class="ios-group-title">Nutrition (per serving)</div>
+    <div class="ios-group">
+      ${NUTRITION_FIELDS.map(f=>`<div class="ios-row"><label class="ios-label">${f.label}</label><input class="ios-input nut-in" id="ef-nut-${f.key}" type="text" inputmode="decimal" placeholder="—" value="${esc(nutVal(r?.nutrition,f.key))}"><span class="ios-unit">${f.unit}</span></div>`).join('')}
+    </div>
+
     ${r?`<div class="ios-danger-block"><button class="ios-link-btn danger bold ios-danger-btn" onclick="confirmDeleteRecipe()">Delete Recipe</button></div>`:''}
     <div style="height:20px"></div>`;
+}
+
+// The nine nutrition values, in the order they appear in the form
+const NUTRITION_FIELDS=[
+  {key:'calories',label:'Calories',unit:'kcal'},
+  {key:'protein_g',label:'Protein',unit:'g'},
+  {key:'carbs_g',label:'Carbs',unit:'g'},
+  {key:'fat_g',label:'Fat',unit:'g'},
+  {key:'fiber_g',label:'Fiber',unit:'g'},
+  {key:'sugars_g',label:'Sugar',unit:'g'},
+  {key:'saturatedFat_g',label:'Sat fat',unit:'g'},
+  {key:'sodium_mg',label:'Sodium',unit:'mg'},
+  {key:'cholesterol_mg',label:'Cholesterol',unit:'mg'},
+];
+function nutVal(n,key){const v=n?n[key]:null;return (v===null||v===undefined)?'':String(v);}
+// Blank or unreadable = null; "12,5" and "12.5" both become the number 12.5
+function parseNut(v){
+  const t=String(v||'').trim().replace(',','.');
+  if(!t) return null;
+  const n=Number(t);
+  return (isFinite(n)&&n>=0)?n:null;
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
@@ -1082,8 +1116,8 @@ function buildRecipeFromForm(){
     servings:parseInt(document.getElementById('ef-servings')?.value)||4,
     imageUrl:(document.getElementById('ef-img')?.value||'').trim(),
     pageLink:(document.getElementById('ef-link')?.value||'').trim(),
-    // Preserve existing nutrition data; Phase 3 will compute from ingredients
-    nutrition:editorRecipe?.nutrition||{calories:null,protein_g:null,carbs_g:null,fat_g:null,fiber_g:null,sugars_g:null,saturatedFat_g:null,sodium_mg:null,cholesterol_mg:null},
+    // Nutrition comes from the form (blank = null, values are numbers); any other keys already stored are kept
+    nutrition:{...(editorRecipe?.nutrition||{}),...Object.fromEntries(NUTRITION_FIELDS.map(f=>[f.key,parseNut(document.getElementById('ef-nut-'+f.key)?.value)]))},
     ingredients:cleanIngs,
     steps:cleanSteps,
     linkedRecipes:editorRecipe?.linkedRecipes||[],
