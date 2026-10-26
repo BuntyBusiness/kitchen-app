@@ -256,6 +256,25 @@
 .ed-step-del{width:20px;height:20px;border-radius:50%;background:#ff3b30;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;-webkit-tap-highlight-color:transparent}
 .ed-steps-empty{font-size:12px;color:#aeaeb2;text-align:center;padding:14px;font-style:italic}
 
+/* ── Sub-recipes (F1): Back bar, link icons, picker ── */
+.back-bar{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--border);padding:10px 52px 10px 12px;flex-shrink:0}
+.back-btn{background:none;border:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--app-accent);cursor:pointer;padding:4px 0;min-height:32px;text-align:left;-webkit-tap-highlight-color:transparent}
+.ing-row.linked .ing-name{color:var(--app-primary);font-weight:600}
+.ing-open{flex-shrink:0;width:32px;height:26px;border:none;background:none;color:var(--app-primary);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;align-self:center;-webkit-tap-highlight-color:transparent}
+.ed-ing-link{width:26px;height:26px;border-radius:50%;border:1px solid #d9cfc6;background:#fff;color:#8e8e93;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.ed-ing-link.on{background:var(--app-primary);border-color:var(--app-primary);color:#fff}
+.ed-ing-sub{background:#fff;padding:0 14px 8px;font-size:11px;color:#6c6c70;border-bottom:1px solid #e5e5ea}
+.ed-ing-sub .lk{color:var(--app-accent)}
+.ed-ing-sub button{background:none;border:none;padding:0;font-family:inherit;font-size:11px;color:#6c6c70;text-decoration:underline;cursor:pointer}
+.pk-overlay{display:none;position:fixed;inset:0;z-index:2500;background:rgba(58,16,32,.45);backdrop-filter:blur(8px);justify-content:center;align-items:flex-start}
+.pk-search{width:100%;box-sizing:border-box;height:44px;font-family:inherit;font-size:15px;color:#1c1c1e;background:#fff;border:1px solid #d9cfc6;border-radius:10px;padding:0 12px;outline:none}
+.pk-search:focus{border-color:var(--app-accent)}
+.pk-list{background:#fff;border-radius:10px;overflow:hidden;margin-top:12px}
+.pk-item{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;background:#fff;border:none;border-bottom:1px solid #e5e5ea;padding:12px 14px;font-family:inherit;font-size:15px;color:#1c1c1e;cursor:pointer;min-height:44px;-webkit-tap-highlight-color:transparent}
+.pk-item:last-child{border-bottom:none}
+.pk-item .cur{color:var(--app-accent);font-size:12px;font-weight:600;white-space:nowrap}
+.pk-remove{width:100%;margin-top:14px;background:#fff;border:1px solid #e5e5ea;border-radius:10px;padding:12px;font-family:inherit;font-size:15px;color:#ff3b30;cursor:pointer}
+
 /* ── Save toast ── */
 .save-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--app-primary);color:#fff;padding:9px 20px;border-radius:var(--r-pill);font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
 .save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -317,6 +336,7 @@
   <div class="modal" id="modal">
     <button class="modal-close" id="modalClose">✕</button>
     <div class="modal-scroll" id="modalScroll">
+      <div class="back-bar" id="backBar" style="display:none"></div>
       <div class="modal-img-wrap" id="modalImgWrap"></div>
       <div class="modal-hero" id="modalHero"></div>
       <div class="modal-body" id="modalBody"></div>
@@ -333,6 +353,22 @@
       <button class="ios-link-btn bold" id="editorSaveBtn" onclick="saveRecipe()">Save</button>
     </div>
     <div class="ios-sheet-body" id="editorBody"></div>
+  </div>
+</div>
+
+<!-- Recipe picker (link an ingredient to a sub-recipe) -->
+<div class="pk-overlay" id="pickerOverlay">
+  <div class="fs-sheet">
+    <div class="fs-nav">
+      <button class="fs-nav-btn" onclick="closePicker()">Cancel</button>
+      <div class="fs-nav-title">Link to a recipe</div>
+      <span style="min-width:64px"></span>
+    </div>
+    <div class="fs-body">
+      <div style="padding-top:12px"><input class="pk-search" id="pickerSearch" type="text" placeholder="Search recipes…" oninput="renderPickerList()"></div>
+      <div class="pk-list" id="pickerList"></div>
+      <div id="pickerRemoveWrap"></div>
+    </div>
   </div>
 </div>
 
@@ -362,6 +398,10 @@ const CATEGORIES = ['Beans / Lentils','Biryani','Bowl','Burger','Cake','Cocktail
 const UNITS = ['g','kg','ml','l','tsp','tbsp','cup','clove','piece','serving','pinch','dash','bunch','sprig','slice','can'];
 const CAT_ORDER  = ['Vegetables','Legumes/Dals','Grains/Flour','Dairy','Nuts/Coconut','Spices (Powder)','Spices (Whole/Seeds)','Fresh Aromatics','Oils/Fats','Alcohol/Cocktail','Citrus/Acid','Liquids','Fruits','Salt/Seasonings','Other'];
 
+// recipeId on an ingredient (sub-recipe link) as a whole number, or null when not linked
+function subId(v){const n=parseInt(v);return (v===null||v===undefined||v===''||isNaN(n))?null:n;}
+const ICON_LINK='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
+
 function adaptRecipes(raw) {
   raw.recipes.forEach(r => {
     const id = parseInt(r.id);
@@ -375,7 +415,8 @@ function adaptRecipes(raw) {
     ingredients[id] = (r.ingredients||[]).flatMap(g =>
       (g.items||[]).map(i => ({
         cat:g.category, qty:i.quantity+(i.unit?' '+i.unit:''),
-        rawQty:parseQty(i.quantity), unit:i.unit||'', name:i.name
+        rawQty:parseQty(i.quantity), unit:i.unit||'', name:i.name,
+        recipeId:subId(i.recipeId)
       }))
     );
     stepsData[id]    = (r.steps||[]).slice().sort((a,b)=>a.step-b.step);
@@ -642,9 +683,11 @@ function renderIngredientsTab(r, scale) {
           ${byCat[cat].map(item=>{
             const sq=(scale!==1&&item.rawQty!==null)?scaleQty(item.rawQty,item.unit,scale):item.qty;
             const cls=checkedIngredients.has(item.idx)?' checked':'';
-            return `<li class="ing-row${cls}" data-idx="${item.idx}" onclick="toggleIngredient(${item.idx})">
+            const sub=item.recipeId!==null&&item.recipeId!==undefined?recipes.find(x=>x.id===item.recipeId):null;
+            return `<li class="ing-row${cls}${sub?' linked':''}" data-idx="${item.idx}" onclick="toggleIngredient(${item.idx})">
               <span class="ing-qty">${sq||'—'}</span>
               <span class="ing-name">${item.name}</span>
+              ${sub?`<button class="ing-open" aria-label="Open ${esc(sub.name)}" onclick="event.stopPropagation();openSubRecipe(${sub.id})">${ICON_LINK}</button>`:''}
             </li>`;
           }).join('')}
         </ul>
@@ -776,20 +819,50 @@ function changeServings(delta){
   if(ingPanel) ingPanel.innerHTML=renderIngredientsTab(currentRecipe,scale);
 }
 
-function openModal(r){
-  currentRecipe=r; currentServings=r.servings;
-  checkedIngredients.clear(); checkedSteps.clear(); activeTab='ingredients';
+// ── Sub-recipes: open on top, Back returns to exactly where you were ──────────
+let modalStack=[];   // earlier recipes (with servings, ticks, tab and scroll position)
+function updateBackBar(){
+  const bar=document.getElementById('backBar'); if(!bar) return;
+  if(!modalStack.length){bar.style.display='none';bar.innerHTML='';return;}
+  const prev=modalStack[modalStack.length-1].recipe;
+  bar.innerHTML=`<button class="back-btn" onclick="backFromSubRecipe()">‹ Back to ${esc(prev.name)}</button>`;
+  bar.style.display='block';
+}
+function openSubRecipe(id){
+  const sub=recipes.find(x=>x.id===id);
+  if(!sub||!currentRecipe) return;
+  modalStack.push({recipe:currentRecipe,servings:currentServings,ing:new Set(checkedIngredients),steps:new Set(checkedSteps),tab:activeTab,scroll:document.getElementById('modalScroll').scrollTop});
+  showRecipe(sub,sub.servings,new Set(),new Set(),'ingredients');
+  document.getElementById('modalScroll').scrollTop=0;
+}
+function backFromSubRecipe(){
+  const s=modalStack.pop(); if(!s) return;
+  const cur=recipes.find(x=>x.id===s.recipe.id)||s.recipe;   // in case it was changed meanwhile
+  showRecipe(cur,s.servings,s.ing,s.steps,s.tab);
+  document.getElementById('modalScroll').scrollTop=s.scroll;
+}
+function showRecipe(r,servings,ing,steps,tab){
+  currentRecipe=r; currentServings=servings;
+  checkedIngredients=ing; checkedSteps=steps; activeTab=tab;
   const em=cuisineEmoji[r.cuisine]||'🍴', hasImg=!isPlaceholder(r.img), hasLink=!!r.link;
   modalImgWrap.innerHTML=hasImg
     ?`<img class="modal-img" src="${r.img}" alt="${r.name}"${hasLink?` onclick="window.open('${r.link}','_blank')" title="Open recipe page"`:''} onerror="this.parentNode.innerHTML='<div class=modal-img-placeholder>${em}</div>'">${hasLink?'<div class="img-link-hint">↗ Open recipe page</div>':''}`
     :`<div class="modal-img-placeholder"${hasLink?` onclick="window.open('${r.link}','_blank')" style="cursor:pointer"`:''} >${em}</div>${hasLink?'<div class="img-link-hint">↗ Open recipe page</div>':''}`;
   renderModalHero(r);
-  renderModalBody(r,1);
+  renderModalBody(r,servings/r.servings);
+  updateBackBar();
+}
+
+function openModal(r){
+  modalStack=[];
+  showRecipe(r,r.servings,new Set(),new Set(),'ingredients');
+  document.getElementById('modalScroll').scrollTop=0;
   overlay.classList.add('open');
   document.body.style.overflow='hidden';
 }
 
 function closeModal(){
+  modalStack=[]; updateBackBar();
   overlay.classList.remove('open');
   document.body.style.overflow='';
   currentRecipe=null; checkedIngredients.clear(); checkedSteps.clear(); activeTab='ingredients';
@@ -797,7 +870,10 @@ function closeModal(){
 
 document.getElementById('modalClose').addEventListener('click',closeModal);
 overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeFilterSheet();closeModal();closeEditor();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){
+  if(document.getElementById('pickerOverlay').style.display==='flex'){closePicker();return;}
+  closeFilterSheet();closeModal();closeEditor();
+}});
 
 // ─── EDITOR ───────────────────────────────────────────────────────────────────
 let editorRecipe  = null;
@@ -925,9 +1001,61 @@ function renderEdIngredients(){
         <input class="ed-ing-qty" type="text" placeholder="qty" value="${esc(item.quantity||'')}" oninput="edUpdateIng(${gi},${ii},'quantity',this.value)">
         <select class="ed-ing-unit" onchange="edUpdateIng(${gi},${ii},'unit',this.value)">${unitOptions(item.unit)}</select>
         <input class="ed-ing-name" type="text" placeholder="ingredient" value="${esc(item.name||'')}" oninput="edUpdateIng(${gi},${ii},'name',this.value)">
+        <button class="ed-ing-link${item.recipeId?' on':''}" aria-label="Link to a recipe" onclick="openRecipePicker(${gi},${ii})">${ICON_LINK}</button>
         <button class="ed-ing-del" onclick="edRemoveIng(${gi},${ii})">×</button>
-      </div>`).join('')}`).join('');
+      </div>
+      ${item.recipeId?`<div class="ed-ing-sub"><span class="lk">${linkedLabel(item.recipeId)}</span> · <button onclick="edUnlink(${gi},${ii})">Unlink</button></div>`:''}`).join('')}`).join('');
 }
+
+// ── Sub-recipe links in the editor ────────────────────────────────────────────
+function linkedLabel(id){
+  const r=recipes.find(x=>String(x.id)===String(id));
+  return r?`Linked to ${esc(r.name)}`:'Linked to a recipe that no longer exists';
+}
+let pickerTarget=null;   // {gi, ii}
+function openRecipePicker(gi,ii){
+  pickerTarget={gi,ii};
+  document.getElementById('pickerSearch').value='';
+  renderPickerList();
+  document.getElementById('pickerOverlay').style.display='flex';
+}
+function closePicker(){
+  document.getElementById('pickerOverlay').style.display='none';
+  pickerTarget=null;
+}
+function renderPickerList(){
+  if(!pickerTarget) return;
+  const q=document.getElementById('pickerSearch').value.toLowerCase().trim();
+  const item=edIngredients[pickerTarget.gi]?.items?.[pickerTarget.ii];
+  const curId=item?subId(item.recipeId):null;
+  const selfId=editorRecipe?parseInt(editorRecipe.id):null;
+  const list=recipes.filter(r=>r.id!==selfId&&(!q||r.name.toLowerCase().includes(q)))
+    .slice().sort((a,b)=>a.name.localeCompare(b.name));
+  document.getElementById('pickerList').innerHTML=list.length
+    ?list.map(r=>`<button class="pk-item" onclick="pickRecipe(${r.id})"><span>${esc(r.name)}</span>${r.id===curId?'<span class="cur">✓ current</span>':''}</button>`).join('')
+    :'<div class="fs-empty" style="padding:14px">No recipes match.</div>';
+  document.getElementById('pickerRemoveWrap').innerHTML=curId!==null
+    ?'<button class="pk-remove" onclick="pickRecipe(null)">Remove link</button>':'';
+}
+function pickRecipe(id){
+  if(!pickerTarget) return;
+  const item=edIngredients[pickerTarget.gi]?.items?.[pickerTarget.ii];
+  if(item){
+    if(id===null) delete item.recipeId;
+    else{
+      item.recipeId=id;
+      if(!(item.name||'').trim()){const r=recipes.find(x=>x.id===id); if(r) item.name=r.name;}
+    }
+  }
+  closePicker();
+  refreshEdIngredients();
+}
+function edUnlink(gi,ii){
+  const item=edIngredients[gi]?.items?.[ii];
+  if(item) delete item.recipeId;
+  refreshEdIngredients();
+}
+document.getElementById('pickerOverlay').addEventListener('click',e=>{if(e.target.id==='pickerOverlay')closePicker();});
 
 // Builds the <option> list for the unit dropdown. If a recipe already has a unit
 // that is not in UNITS, it is kept as an extra option so nothing is lost.
@@ -1139,7 +1267,8 @@ function applyLocalUpdate(built){
   if(ei!==-1){recipes[ei]=adapted;}else{recipes.push(adapted);}
   ingredients[id]=(built.ingredients||[]).flatMap(g=>(g.items||[]).map(i=>({
     cat:g.category,qty:i.quantity+(i.unit?' '+i.unit:''),
-    rawQty:parseQty(i.quantity),unit:i.unit||'',name:i.name
+    rawQty:parseQty(i.quantity),unit:i.unit||'',name:i.name,
+    recipeId:subId(i.recipeId)
   })));
   stepsData[id]=(built.steps||[]).slice().sort((a,b)=>a.step-b.step);
   rawNutrition[id]=built.nutrition||{};
