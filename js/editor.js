@@ -46,14 +46,14 @@ function renderEditorBody(){
     <!-- Details -->
     <div class="ios-group-title">Details</div>
     <div class="ios-group">
-      <div class="ios-row"><label class="ios-label">Name</label><input class="ios-input" id="ef-name" type="text" placeholder="Recipe name" value="${esc(r?.name||'')}"></div>
+      <div class="ios-row"><label class="ios-label">Name</label><input class="ios-input" autocomplete="off" id="ef-name" type="text" placeholder="Recipe name" value="${esc(r?.name||'')}"></div>
       <div class="ios-row"><label class="ios-label">Course</label><select class="ios-select" id="ef-course">${courseOpts}</select></div>
       <div class="ios-row"><label class="ios-label">Cuisine</label><select class="ios-select" id="ef-cuisine"><option value="">— select —</option>${cuOpts}</select></div>
       <div class="ios-row"><label class="ios-label">Category</label><select class="ios-select" id="ef-category"><option value="">— select —</option>${catOpts}</select></div>
-      <div class="ios-row"><label class="ios-label">Source</label><input class="ios-input" id="ef-source" type="text" placeholder="Person, book or website" value="${esc(r?.source||'')}"></div>
-      <div class="ios-row"><label class="ios-label">Servings</label><input class="ios-input" id="ef-servings" type="number" min="1" max="50" placeholder="4" value="${r?.servings||''}"></div>
-      <div class="ios-row"><label class="ios-label">Page link</label><input class="ios-input" id="ef-link" type="url" placeholder="https://…" value="${esc(r?.pageLink||'')}"></div>
-      <div class="ios-row"><label class="ios-label">Image URL</label><input class="ios-input" id="ef-img" type="url" placeholder="./images/recipes/…" value="${esc(r?.imageUrl||'')}"></div>
+      <div class="ios-row"><label class="ios-label">Source</label><input class="ios-input" autocomplete="off" id="ef-source" type="text" placeholder="Person, book or website" value="${esc(r?.source||'')}"></div>
+      <div class="ios-row"><label class="ios-label">Servings</label><input class="ios-input" autocomplete="off" id="ef-servings" type="number" min="1" max="50" placeholder="4" value="${r?.servings||''}"></div>
+      <div class="ios-row"><label class="ios-label">Page link</label><input class="ios-input" autocomplete="off" id="ef-link" type="url" placeholder="https://…" value="${esc(r?.pageLink||'')}"></div>
+      <div class="ios-row"><label class="ios-label">Image URL</label><input class="ios-input" autocomplete="off" id="ef-img" type="url" placeholder="./images/recipes/…" value="${esc(r?.imageUrl||'')}"></div>
     </div>
 
     <!-- Ingredients -->
@@ -71,7 +71,7 @@ function renderEditorBody(){
     <div class="ios-group" id="ed-steps-group">
       ${renderEdStepsList()}
       <div class="steps-paste-wrap">
-        <textarea class="steps-paste-ta" id="stepsPasteArea" placeholder="Paste or type steps here — one per line, or numbered like:&#10;1. Rinse the dal&#10;2. Heat oil in a pan&#10;3. Add the spices…"></textarea>
+        <textarea class="steps-paste-ta" autocomplete="off" id="stepsPasteArea" placeholder="Paste or type steps here — one per line, or numbered like:&#10;1. Rinse the dal&#10;2. Heat oil in a pan&#10;3. Add the spices…"></textarea>
         <p class="steps-paste-hint">Tap a step above to edit its text. Each line you paste here becomes a new step. Numbers and dots are stripped automatically.</p>
         <div class="steps-paste-actions">
           <button class="steps-paste-btn steps-paste-convert" onclick="convertPastedSteps()">Convert to steps</button>
@@ -83,7 +83,7 @@ function renderEditorBody(){
     <!-- Nutrition (per serving) -->
     <div class="ios-group-title">Nutrition (per serving)</div>
     <div class="ios-group">
-      ${NUTRITION_FIELDS.map(f=>`<div class="ios-row"><label class="ios-label">${f.label}</label><input class="ios-input nut-in" id="ef-nut-${f.key}" type="text" inputmode="decimal" placeholder="—" value="${esc(nutVal(r?.nutrition,f.key))}"><span class="ios-unit">${f.unit}</span></div>`).join('')}
+      ${NUTRITION_FIELDS.map(f=>`<div class="ios-row"><label class="ios-label">${f.label}</label><input class="ios-input nut-in" autocomplete="off" id="ef-nut-${f.key}" type="text" inputmode="decimal" placeholder="—" value="${esc(nutVal(r?.nutrition,f.key))}"><span class="ios-unit">${f.unit}</span></div>`).join('')}
     </div>
 
     ${r?`<div class="ios-danger-block"><button class="ios-link-btn danger bold ios-danger-btn" onclick="confirmDeleteRecipe()">Delete Recipe</button></div>`:''}
@@ -100,9 +100,9 @@ function renderEdIngredients(){
     </div>
     ${(group.items||[]).map((item,ii)=>`
       <div class="ed-ing-row" id="ing-${gi}-${ii}">
-        <input class="ed-ing-qty" type="text" placeholder="qty" value="${esc(item.quantity||'')}" oninput="edUpdateIng(${gi},${ii},'quantity',this.value)">
+        <input class="ed-ing-qty" autocomplete="off" type="text" placeholder="qty" value="${esc(item.quantity||'')}" oninput="edUpdateIng(${gi},${ii},'quantity',this.value)">
         <select class="ed-ing-unit" onchange="edUpdateIng(${gi},${ii},'unit',this.value)">${unitOptions(item.unit)}</select>
-        <input class="ed-ing-name" type="text" placeholder="ingredient" value="${esc(item.name||'')}" oninput="edUpdateIng(${gi},${ii},'name',this.value)">
+        <input class="ed-ing-name" autocomplete="off" type="text" placeholder="ingredient" value="${esc(item.name||'')}" oninput="edUpdateIng(${gi},${ii},'name',this.value)">
         <button class="ed-ing-link${item.recipeId?' on':''}" aria-label="Link to a recipe" onclick="openRecipePicker(${gi},${ii})">${ICON_LINK}</button>
         <button class="ed-ing-del" onclick="edRemoveIng(${gi},${ii})">×</button>
       </div>
@@ -196,7 +196,7 @@ function renderEdStepsList(){
     <div class="ed-step-row" id="ed-step-${idx}">
       <div class="ed-step-num">${idx+1}</div>
       <div class="ed-step-main">
-        <div class="ed-step-grow" data-replicated-value="${esc(s.instruction||'')}"><textarea class="ed-step-text" rows="1" oninput="edUpdateStep(${idx},this.value);autosize(this)">${esc(s.instruction||'')}</textarea></div>
+        <div class="ed-step-grow" data-replicated-value="${esc(s.instruction||'')}"><textarea class="ed-step-text" autocomplete="off" rows="1" oninput="edUpdateStep(${idx},this.value);autosize(this)">${esc(s.instruction||'')}</textarea></div>
         ${idx>0?`<div class="ed-step-tools"><button class="ed-step-merge" onclick="edMergeStepUp(${idx})">↑ Merge into step ${idx}</button></div>`:''}
       </div>
       <button class="ed-step-del" onclick="edRemoveStep(${idx})">×</button>
