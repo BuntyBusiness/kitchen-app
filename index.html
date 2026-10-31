@@ -26,6 +26,13 @@
   </div>
 </header>
 
+<div class="container">
+  <div class="view-switch">
+    <button class="vs-btn active" id="vsRecipes" onclick="setAppView('recipes')">Recipes</button>
+    <button class="vs-btn" id="vsPlan" onclick="setAppView('plan')">Plan</button>
+  </div>
+</div>
+
 <div class="container" id="app">
   <div class="sec-lbl">Browse recipes</div>
   <div class="filters-bar">
@@ -45,6 +52,9 @@
   <div class="results-info" id="resultsInfo"></div>
   <div class="recipe-grid" id="recipeGrid"></div>
 </div>
+
+<!-- Meal planner (day view is drawn here by js/meal-plan.js) -->
+<div class="container" id="planApp" style="display:none"></div>
 
 <!-- Filter sheet (slide-up, chips) -->
 <div class="fs-overlay" id="filterOverlay">
@@ -100,6 +110,32 @@
   </div>
 </div>
 
+<!-- Meal planner: add a recipe or a food to a slot -->
+<div class="pk-overlay" id="planAddOverlay">
+  <div class="fs-sheet">
+    <div class="fs-nav">
+      <button class="fs-nav-btn" onclick="closePlanAdd()">Cancel</button>
+      <div class="fs-nav-title" id="planAddTitle">Add</div>
+      <span style="min-width:64px"></span>
+    </div>
+    <div class="pl-tabs">
+      <button class="pl-tab on" id="planTabRecipe" onclick="planAddSwitch('recipe')">Recipe</button>
+      <button class="pl-tab" id="planTabFood" onclick="planAddSwitch('food')">Food</button>
+    </div>
+    <div class="fs-body" id="planAddBody"></div>
+    <div class="fs-foot" id="planAddFoot"></div>
+  </div>
+</div>
+
+<!-- Meal planner: the ⋯ menu on an item -->
+<div class="pl-act-overlay" id="planActOverlay">
+  <div class="pl-act-sheet">
+    <div class="pl-act-title" id="planActTitle"></div>
+    <button class="pl-act-btn danger" onclick="planActRemove()">Remove from plan</button>
+    <button class="pl-act-btn" onclick="closePlanAct()">Cancel</button>
+  </div>
+</div>
+
 <div class="save-toast" id="saveToast"></div>
 
 <script src="./js/constants.js"></script>
@@ -109,6 +145,7 @@
 <script src="./js/browse.js"></script>
 <script src="./js/recipe-modal.js"></script>
 <script src="./js/editor.js"></script>
+<script src="./js/meal-plan.js"></script>
 <script src="./js/main.js"></script>
 </body>
 </html>
