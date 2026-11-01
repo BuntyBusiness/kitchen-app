@@ -23,8 +23,7 @@ function renderCards(list) {
       <div class="card-thumb">${isPlaceholder(r.img)?`<div class="card-img-placeholder">${em}</div>`:`<img class="card-img" src="${r.img}" alt="${esc(r.name)}" onerror="this.parentNode.innerHTML='<div class=card-img-placeholder>${em}</div>'">`}</div>
       <div class="card-body">
         <div class="card-name">${r.name}</div>
-        ${hasCal?`<div class="card-data">${ICON_FLAME}<span>${r.cal} kcal</span></div>`:''}
-        ${r.lastCooked?`<div class="card-data">${ICON_CAL}<span>${formatDate(r.lastCooked)}</span></div>`:''}
+        ${(hasCal||r.lastCooked)?`<div class="card-data">${[hasCal?`${r.cal} kcal`:'',r.lastCooked?`cooked ${formatDate(r.lastCooked)}`:''].filter(Boolean).join(' · ')}</div>`:''}
       </div>`;
     card.addEventListener('click',()=>openModal(r));
     recipeGrid.appendChild(card);

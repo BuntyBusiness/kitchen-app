@@ -13,24 +13,19 @@ const modalImgWrap = document.getElementById('modalImgWrap');
 const modalHero    = document.getElementById('modalHero');
 const modalBody    = document.getElementById('modalBody');
 
-// Hero: name + edit button on left, scaler (no labels) on right — same row
+// Hero: name, one muted line (cuisine · course · last cooked) and a soft Servings row
 function renderModalHero(r) {
-  const tc = cuisineTagClass[r.cuisine]||'tag-indian';
+  const meta=[r.cuisine,r.course,r.lastCooked?`cooked ${formatDate(r.lastCooked)}`:''].filter(Boolean).join(' · ');
   modalHero.innerHTML=`
-    <div class="modal-hero-row">
-      <div class="mh-left">
-        <div class="mh-title">${r.name}</div>
-        <div class="mh-sub">
-          <span class="tag ${tc}" style="font-size:9px">${r.cuisine}</span>
-          ${r.sub?`<span class="tag tag-sub" style="font-size:9px;background:rgba(255,255,255,.12);color:#a8cfed;border-color:transparent">${r.sub}</span>`:''}
-          <button class="mh-edit-btn" onclick="openEditor(currentRecipe)">✎ Edit</button>
-        </div>
-      </div>
-      <div class="scaler-row">
-        <button class="scaler-btn" onclick="changeServings(-1)" ${currentServings<=1?'disabled':''}>−</button>
+    <div class="mh-title">${r.name}</div>
+    <div class="mh-sub"><span>${meta}</span><button class="mh-edit-btn" onclick="openEditor(currentRecipe)">Edit</button></div>
+    <div class="scaler-row">
+      <span class="scaler-lbl">Servings</span>
+      <span class="scaler-ctl">
+        <button class="scaler-btn" onclick="changeServings(-1)" ${currentServings<=1?'disabled':''} aria-label="Fewer servings">−</button>
         <span class="scaler-val">${currentServings}</span>
-        <button class="scaler-btn" onclick="changeServings(1)" ${currentServings>=20?'disabled':''}>+</button>
-      </div>
+        <button class="scaler-btn" onclick="changeServings(1)" ${currentServings>=20?'disabled':''} aria-label="More servings">+</button>
+      </span>
     </div>`;
 }
 
@@ -44,7 +39,7 @@ function renderNutritionTab(r) {
   return `
     <div class="nut-panel" style="margin-top:4px">
       <div class="nut-panel-hdr">
-        <span class="nut-panel-lbl">Macros &amp; Micronutrients</span>
+        <span class="nut-panel-lbl">Nutrition</span>
         <span class="nut-panel-sub">per serving · recipe makes ${r.servings}</span>
       </div>
       <div class="nut-grid">
@@ -79,6 +74,7 @@ function renderIngredientsTab(r, scale) {
             const cls=checkedIngredients.has(item.idx)?' checked':'';
             const sub=item.recipeId!==null&&item.recipeId!==undefined?recipes.find(x=>x.id===item.recipeId):null;
             return `<li class="ing-row${cls}${sub?' linked':''}" data-idx="${item.idx}" onclick="toggleIngredient(${item.idx})">
+              <span class="ing-tick" aria-hidden="true"></span>
               <span class="ing-qty">${sq||'—'}</span>
               <span class="ing-name">${item.name}</span>
               ${sub?`<button class="ing-open" aria-label="Open ${esc(sub.name)}" onclick="event.stopPropagation();openSubRecipe(${sub.id})">${ICON_LINK}</button>`:''}
@@ -88,12 +84,8 @@ function renderIngredientsTab(r, scale) {
       </div>`).join('')
     :'<p class="no-ings">No ingredient details available</p>';
   return `
-    <div class="sec-lbl" style="margin-bottom:6px">
-      Ingredients by category
-      ${ings.length?`<span style="font-weight:400;color:var(--faint);text-transform:none;font-size:9px;letter-spacing:0;margin-left:6px" id="ingCounter">${checkedIngredients.size}/${ings.length} checked</span>`:''}
-    </div>
+    ${ings.length?`<div class="ing-count" id="ingCounter">${checkedIngredients.size}/${ings.length} checked</div>`:''}
     <div class="ing-section">
-      <div class="ing-section-hdr"><span class="ing-section-lbl">Tap any row to check off</span></div>
       <div class="ing-categories">${ingHTML}</div>
     </div>`;
 }
@@ -153,7 +145,7 @@ async function setLastCooked(dateStr){
   }finally{
     const cur=recipes.find(x=>x.id===id);
     const rowNow=document.getElementById('cookedRow');
-    if(cur&&rowNow&&currentRecipe&&currentRecipe.id===id) rowNow.innerHTML=renderCookedRow(cur);
+    if(cur&&rowNow&&currentRecipe&&currentRecipe.id===id){ rowNow.innerHTML=renderCookedRow(cur); renderModalHero(cur); }
   }
 }
 
@@ -162,9 +154,9 @@ function renderModalBody(r, scale) {
   modalBody.innerHTML=`
     <div class="cooked-row" id="cookedRow">${renderCookedRow(r)}</div>
     <div class="modal-tab-bar">
-      <button class="modal-tab-btn${activeTab==='ingredients'?' active':''}" onclick="switchTab('ingredients',this)">🥄 Ingredients</button>
-      <button class="modal-tab-btn${activeTab==='method'?' active':''}" onclick="switchTab('method',this)">📋 Method${steps.length?` (${steps.length})`:''}</button>
-      <button class="modal-tab-btn${activeTab==='nutrition'?' active':''}" onclick="switchTab('nutrition',this)">📊 Nutrition</button>
+      <button class="modal-tab-btn${activeTab==='ingredients'?' active':''}" onclick="switchTab('ingredients',this)">Ingredients</button>
+      <button class="modal-tab-btn${activeTab==='method'?' active':''}" onclick="switchTab('method',this)">Method${steps.length?` (${steps.length})`:''}</button>
+      <button class="modal-tab-btn${activeTab==='nutrition'?' active':''}" onclick="switchTab('nutrition',this)">Nutrition</button>
     </div>
     <div class="modal-tab-panel${activeTab==='ingredients'?' active':''}" id="tabIngredients">${renderIngredientsTab(r,scale)}</div>
     <div class="modal-tab-panel${activeTab==='method'?' active':''}" id="tabMethod">${renderMethodTab(r)}</div>

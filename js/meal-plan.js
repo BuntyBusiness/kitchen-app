@@ -34,9 +34,10 @@ function planWeekLabel(ws){
   const a=new Date(planParse(ws)), b=new Date(planParse(planAddDays(ws,6)));
   const ad=a.getUTCDate(), bd=b.getUTCDate(), am=MONTHS[a.getUTCMonth()], bm=MONTHS[b.getUTCMonth()];
   const ay=a.getUTCFullYear(), by=b.getUTCFullYear();
+  const yr=(y)=>y===new Date().getFullYear()?'':' '+y;   // the year is shown only when it is not this year
   if(ay!==by) return `${ad} ${am} ${ay} – ${bd} ${bm} ${by}`;
-  if(am!==bm) return `${ad} ${am} – ${bd} ${bm} ${by}`;
-  return `${ad} – ${bd} ${bm} ${by}`;
+  if(am!==bm) return `${ad} ${am} – ${bd} ${bm}${yr(by)}`;
+  return `${ad} – ${bd} ${bm}${yr(by)}`;
 }
 function planDayLabel(s){
   const d=new Date(planParse(s));
@@ -197,13 +198,10 @@ document.addEventListener('visibilitychange',()=>{
 function planItemHTML(it){
   if(it.type==='recipe'){
     const r=planRecipeOf(it), n=parseInt(it.servings)||PLAN_DEFAULT_SERVINGS;
-    if(!r) return `<div class="pl-item"><div class="pl-thumb"><div class="card-img-placeholder">🍴</div></div>
+    if(!r) return `<div class="pl-item">
       <div class="pl-main"><div class="pl-name pl-gone">${recipes.length?'Recipe no longer exists':'Loading recipes…'}</div></div>
       <button class="pl-more" onclick="planOpenAct('${it.id}')" aria-label="Item options">⋯</button></div>`;
-    const em=cuisineEmoji[r.cuisine]||'🍴';
-    const thumb=isPlaceholder(r.img)?`<div class="card-img-placeholder">${em}</div>`:`<img class="card-img" src="${esc(r.img)}" alt="" onerror="this.parentNode.innerHTML='<div class=card-img-placeholder>${em}</div>'">`;
     return `<div class="pl-item">
-      <div class="pl-thumb" onclick="planOpenRecipe('${it.id}')">${thumb}</div>
       <div class="pl-main" onclick="planOpenRecipe('${it.id}')"><div class="pl-name">${esc(r.name)}</div></div>
       <div class="pl-step"><div class="pl-step-row">
         <button class="pl-step-btn" onclick="planChangeServings('${it.id}',-1)" ${n<=1?'disabled':''} aria-label="Fewer servings">−</button>
@@ -216,7 +214,6 @@ function planItemHTML(it){
   const q=(it.quantity===null||it.quantity===undefined||it.quantity==='')?null:parseQty(it.quantity);
   const amount=q===null?'':(formatQty(q)+(it.unit?' '+it.unit:''));
   return `<div class="pl-item">
-    <div class="pl-thumb pl-thumb-food"><div class="card-img-placeholder">🍴</div></div>
     <div class="pl-main"><div class="pl-name">${esc(it.name||'')}</div>${amount?`<div class="pl-sub">${esc(amount)}</div>`:''}</div>
     <button class="pl-more" onclick="planOpenAct('${it.id}')" aria-label="Item options">⋯</button></div>`;
 }
@@ -244,7 +241,7 @@ function planRender(){
   for(let i=0;i<7;i++){
     const date=planAddDays(planWeekStart,i), d=new Date(planParse(date));
     h+=`<button class="pl-day${date===planDay?' on':''}${date===today?' today':''}${planDayHasItems(date)?' has':''}" onclick="planPickDay('${date}')">
-      <span class="pl-day-n">${PLAN_DAY_SHORT[i]}</span><span class="pl-day-d">${d.getUTCDate()}</span><span class="pl-day-dot"></span></button>`;
+      <span class="pl-day-n" aria-label="${PLAN_DAY_SHORT[i]}">${PLAN_DAY_SHORT[i][0]}</span><span class="pl-day-d">${d.getUTCDate()}</span><span class="pl-day-dot"></span></button>`;
   }
   h+='</div>';
   if(planStatus==='loading'&&!planData){
