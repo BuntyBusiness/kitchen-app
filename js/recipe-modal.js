@@ -106,13 +106,14 @@ function renderMethodTab(r) {
     </div>`;
 }
 
-// Last cooked: editable date + "Cooked today" button (inside the recipe pop-up)
+// Last gobbled: label, date, clear and the gobble button (Pac-Man) on one row, inside the recipe pop-up
+const ICON_GOBBLE='<svg width="30" height="26" viewBox="0 0 28 24" aria-hidden="true"><path d="M11 12 19.2 6.3A10 10 0 1 0 19.2 17.7Z" fill="#f4b400"/><circle cx="10.5" cy="7.2" r="1.4" fill="#2a2224"/><circle cx="24.6" cy="12" r="1.7" fill="#e07a5f"/></svg>';
 function renderCookedRow(r){
   const d=r.lastCooked||'';
-  return `<span class="cooked-lbl">Last cooked</span>
+  return `<span class="cooked-lbl">Last Gobbled</span>
     <input class="cooked-date" id="cookedDate" type="date" max="${todayStr()}" value="${d}" onchange="setLastCooked(this.value)">
-    ${d?`<button class="cooked-clear" onclick="setLastCooked('')">✕ Clear</button>`:''}
-    <button class="cooked-btn" id="cookedBtn" onclick="setLastCooked(todayStr())">✓ Cooked today</button>`;
+    ${d?`<button class="cooked-clear" onclick="setLastCooked('')" aria-label="Clear the date">✕</button>`:''}
+    <button class="cooked-btn" id="cookedBtn" onclick="setLastCooked(todayStr())" title="Gobbled today" aria-label="Gobbled today">${ICON_GOBBLE}</button>`;
 }
 
 // Saves ONLY the lastCooked date of one recipe, on top of the freshly downloaded file

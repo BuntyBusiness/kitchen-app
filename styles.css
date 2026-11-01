@@ -17,16 +17,19 @@ html{background:#fff}
 body{font-family:'Figtree',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#fff;color:var(--text);font-size:15px}
 button,input,select,textarea{font-family:inherit}
 
-/* ── Header: tabs + New (U8) ── */
-.app-head{position:sticky;top:0;z-index:100;background:#fff;padding:14px 0 6px;margin-bottom:6px}
+/* ── Header: title + key; bottom navigation bar (2 Nov) ── */
+.app-head{position:sticky;top:0;z-index:100;background:#fff;padding:14px 0 4px;margin-bottom:18px}
 .app-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.app-tabs{display:flex;gap:22px}
-.vs-btn{background:none;border:none;padding:6px 0 7px;font-size:22px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;-webkit-tap-highlight-color:transparent}
-.vs-btn.active{color:var(--text);font-weight:700;border-bottom-color:var(--app-accent)}
-.app-head-right{display:flex;align-items:center;gap:8px}
-.new-pill{background:var(--tint);color:var(--app-accent);border:none;border-radius:999px;font-size:14px;font-weight:600;padding:8px 15px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-title{font-size:24px;font-weight:700;letter-spacing:-.01em;color:var(--text)}
 .key-btn{width:34px;height:34px;border:none;background:none;color:var(--faint);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
 .key-btn:hover{background:var(--soft);color:var(--muted)}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:100;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 -6px 20px rgba(42,34,36,.07);padding-bottom:env(safe-area-inset-bottom)}
+.bn-inner{max-width:560px;margin:0 auto;display:flex}
+.bn-btn{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;color:var(--faint);font-size:11px;font-weight:600;letter-spacing:.02em;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bn-btn svg{width:24px;height:24px}
+.bn-btn.active,.bn-btn.bn-new{color:var(--app-accent)}
+.bn-btn.active{font-weight:700}
 .sheet-handle{width:38px;height:4px;border-radius:2px;background:#ddd4d1;margin:8px auto 0;flex-shrink:0}
 
 /* ── Grid & filters ── */
@@ -80,12 +83,13 @@ button,input,select,textarea{font-family:inherit}
 .card-name{font-size:17px;font-weight:600;color:var(--text);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tag{font-size:12px;font-weight:500;padding:0;border-radius:0;background:none;color:var(--muted);text-transform:none;letter-spacing:0}
 .no-results{grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--faint);font-size:14px}
-/* Last cooked row in the recipe pop-up */
-.cooked-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--soft2);border-radius:14px;padding:8px 12px;margin-bottom:14px}
-.cooked-lbl{font-size:13px;font-weight:500;color:var(--muted)}
-.cooked-date{font-size:14px;color:var(--text);background:var(--soft);border:none;border-radius:10px;padding:5px 9px;outline:none;min-width:130px}
-.cooked-clear{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:2px 4px;-webkit-tap-highlight-color:transparent}
-.cooked-btn{margin-left:auto;font-size:13px;font-weight:600;background:var(--tint);color:var(--app-accent);border:none;border-radius:999px;padding:8px 14px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+/* Last Gobbled row in the recipe pop-up (all on one line) */
+.cooked-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;background:var(--soft2);border-radius:14px;padding:5px 6px 5px 12px;margin-bottom:14px}
+.cooked-lbl{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.cooked-date{flex:1;min-width:0;font-size:14px;color:var(--text);background:var(--soft);border:none;border-radius:10px;padding:5px 8px;outline:none}
+.cooked-clear{flex-shrink:0;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;-webkit-tap-highlight-color:transparent}
+.cooked-btn{flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#fff3cf;border:none;border-radius:999px;width:46px;height:36px;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cooked-btn:active{background:#ffe9a8}
 .cooked-btn:disabled,.cooked-date:disabled{opacity:.5;cursor:default}
 
 /* ── Recipe pop-up ── */
@@ -244,22 +248,22 @@ button,input,select,textarea{font-family:inherit}
 .pk-remove{width:100%;margin-top:14px;background:var(--soft);border:none;border-radius:16px;padding:13px;font-size:15px;color:#c0392b;cursor:pointer}
 
 /* ── Meal planner (U8 look: soft blocks, no photos) ── */
-.pl-weekbar{display:flex;align-items:center;gap:4px;margin:8px 0 8px}
-.pl-weeklbl{flex:1;text-align:center;font-size:17px;font-weight:700;color:var(--text)}
+.pl-weekbar{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:2px 0 6px}
+.pl-seg{display:flex;gap:18px;padding-left:2px}
+.pl-seg-btn{background:none;border:none;padding:6px 0 5px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;-webkit-tap-highlight-color:transparent}
+.pl-seg-btn.on{color:var(--app-accent);font-weight:700;border-bottom-color:var(--app-accent)}
 .pl-nav{min-width:38px;height:38px;padding:0 10px;border-radius:12px;border:none;background:none;color:var(--text);font-size:20px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .pl-nav:hover{background:var(--soft)}
-.pl-nav.pl-today{font-size:14px;font-weight:600;color:var(--app-accent)}
-.pl-days{display:flex;gap:4px;margin-bottom:14px}
+.pl-days{display:flex;gap:4px;margin-bottom:14px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .pl-day{flex:1;min-width:0;background:none;border:none;border-radius:16px;padding:7px 0 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;-webkit-tap-highlight-color:transparent}
-.pl-day-n{font-size:12px;font-weight:500;color:var(--faint)}
-.pl-day-d{font-size:18px;font-weight:600;color:var(--text)}
+.pl-day-n{font-size:11px;font-weight:500;color:var(--faint)}
+.pl-day-d{font-size:15px;font-weight:600;color:var(--text)}
 .pl-day.today .pl-day-d{color:var(--app-accent)}
 .pl-day-dot{width:5px;height:5px;border-radius:50%;background:transparent;margin-top:2px}
 .pl-day.has .pl-day-dot{background:var(--app-accent)}
 .pl-day.on{background:var(--tint)}
 .pl-day.on .pl-day-d,.pl-day.on .pl-day-n{color:var(--app-accent);font-weight:700}
 .pl-dayhead{font-size:20px;font-weight:700;color:var(--text);margin:2px 2px 10px}
-.pl-today-tag{font-size:11px;font-weight:600;color:var(--app-accent);background:var(--tint);border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:3px}
 .pl-msg{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;line-height:1.6}
 .pl-retry{margin-top:12px;font-size:14px;font-weight:600;background:var(--app-accent);color:#fff;border:none;border-radius:999px;padding:10px 22px;cursor:pointer}
 .pl-slot{background:var(--soft);border-radius:20px;margin-bottom:12px;padding:6px 6px 8px}
@@ -299,7 +303,30 @@ button,input,select,textarea{font-family:inherit}
 .pl-act-btn.danger{color:#c0392b}
 
 /* ── Save toast ── */
-.save-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+.save-toast{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
 .save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @media(min-width:600px){.container{padding:0 var(--sp-6)}}
+
+/* Pairings, leftovers, week list, add-sheet checkboxes (2 Nov) */
+.pl-side-link{display:block;background:none;border:none;padding:4px 0 0;font-size:12.5px;font-weight:500;color:var(--faint);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+.pl-side-link:hover{color:var(--app-accent)}
+.pl-pair{display:flex;align-items:center;gap:6px;margin:-2px 4px 2px 28px;padding:2px 0 2px 12px}
+.pl-pair-txt{flex:1;min-width:0;font-size:14px;color:var(--text)}
+.pl-pair-with{color:var(--muted);font-size:13px}
+.pl-pair-name{font-weight:600}
+.pl-pair-amt{color:var(--muted)}
+.pl-more-sm{width:30px;height:30px;font-size:18px}
+.pl-item.pl-left{margin:2px 4px;padding:8px 2px 8px 10px;border:1.5px dashed #d8cbd0;border-radius:14px;background:rgba(255,255,255,.6)}
+.pl-cand-sub{display:block;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.pk-item.sel .pl-cand-sub{color:var(--app-accent);opacity:.8}
+.pl-check{display:flex;align-items:center;gap:10px;margin:14px 2px 2px;font-size:15px;color:var(--text);cursor:pointer}
+.pl-check input{width:20px;height:20px;flex-shrink:0;accent-color:var(--app-accent)}
+.pl-with-sel{font-size:15px;color:var(--text);background:var(--soft);border:none;border-radius:10px;padding:6px 8px;max-width:100%}
+.pl-wk-day{display:block;width:100%;box-sizing:border-box;text-align:left;background:var(--soft);border:none;border-radius:18px;padding:12px 14px;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pl-wk-hdr{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.pl-wk-today{font-size:11px;font-weight:600;color:var(--app-accent);background:var(--tint);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:2px}
+.pl-wk-line{display:flex;gap:10px;font-size:13.5px;line-height:1.35;padding:2px 0}
+.pl-wk-slot{flex:0 0 70px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.pl-wk-txt{flex:1;min-width:0;color:var(--text)}
+.pl-wk-none{font-size:13.5px;color:var(--faint)}

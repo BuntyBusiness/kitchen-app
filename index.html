@@ -18,14 +18,8 @@
 <header class="app-head">
   <div class="container">
     <div class="app-head-row">
-      <nav class="app-tabs">
-        <button class="vs-btn active" id="vsRecipes" onclick="setAppView('recipes')">Recipes</button>
-        <button class="vs-btn" id="vsPlan" onclick="setAppView('plan')">Plan</button>
-      </nav>
-      <div class="app-head-right">
-        <button class="new-pill" onclick="openEditor(null)">+ New</button>
-        <button class="key-btn" onclick="promptForGitToken()" title="Set GitHub token" aria-label="Set GitHub token"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M16 7l3 3"/></svg></button>
-      </div>
+      <div class="app-title">The Kitchen</div>
+      <button class="key-btn" onclick="promptForGitToken()" title="Set GitHub token" aria-label="Set GitHub token"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M16 7l3 3"/></svg></button>
     </div>
   </div>
 </header>
@@ -131,12 +125,28 @@
 <div class="pl-act-overlay" id="planActOverlay">
   <div class="pl-act-sheet">
     <div class="pl-act-title" id="planActTitle"></div>
-    <button class="pl-act-btn danger" onclick="planActRemove()">Remove from plan</button>
+    <button class="pl-act-btn danger" id="planActRemoveBtn" onclick="planActRemove()">Remove from plan</button>
     <button class="pl-act-btn" onclick="closePlanAct()">Cancel</button>
   </div>
 </div>
 
 <div class="save-toast" id="saveToast"></div>
+
+<!-- Bottom navigation: Recipes, Plan, New (sharp custom icons) -->
+<nav class="bottom-nav" aria-label="Main">
+  <div class="bn-inner">
+    <button class="bn-btn active" id="bnRecipes" onclick="setAppView('recipes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M3 5h8v14H3z"/><path d="M13 5h8v14h-8z"/><path d="M15.5 9h3M15.5 12.5h3"/></svg>
+      <span>Recipes</span></button>
+    <button class="bn-btn" id="bnPlan" onclick="setAppView('plan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M3 5h18v16H3z"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7 14h3M14 14h3M7 17.5h3"/></svg>
+      <span>Plan</span></button>
+    <button class="bn-btn bn-new" id="bnNew" onclick="openEditor(null)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M12 8v8M8 12h8"/></svg>
+      <span>New</span></button>
+  </div>
+</nav>
+
 
 <script src="./js/constants.js"></script>
 <script src="./js/helpers.js"></script>
