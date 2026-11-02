@@ -330,3 +330,29 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 .pl-wk-slot{flex:0 0 70px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
 .pl-wk-txt{flex:1;min-width:0;color:var(--text)}
 .pl-wk-none{font-size:13.5px;color:var(--faint)}
+
+/* ── Move / copy sheet ── */
+.pl-dest-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;background:var(--soft);border-radius:16px;padding:8px 10px 8px 16px}
+.pl-dest-row .pl-with-sel{background:#fff;font-size:15px;padding:8px 10px}
+.pl-dest-err{font-size:13.5px;color:#c0392b;margin:0 4px 10px;line-height:1.4}
+.pl-dest-ok{background:var(--app-accent);color:#fff;font-weight:700}
+
+/* ── Week grid: seven day columns, four slot rows, Day total row. Same code on every screen; narrow screens scroll sideways ── */
+body:has(.pg-scroll) #planApp{max-width:none}
+.pg-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px 8px}
+.pg-grid{display:grid;grid-template-columns:82px repeat(7,minmax(128px,1fr));gap:6px;min-width:980px}
+.pg-corner{}
+.pg-dayhead{display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;border-radius:14px;padding:6px 0;cursor:pointer;color:var(--muted);font-size:12px;font-weight:500;-webkit-tap-highlight-color:transparent}
+.pg-dayhead b{font-size:14px;color:var(--text);font-weight:700}
+.pg-dayhead:hover{background:var(--soft)}
+.pg-dayhead.today b,.pg-dayhead.today{color:var(--app-accent)}
+.pg-dayhead.today{background:var(--tint)}
+.pg-rowlbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:10px 2px 0}
+.pg-cell{background:var(--soft);border-radius:14px;padding:5px;min-height:64px;display:flex;flex-direction:column;gap:3px}
+.pg-item,.pg-pair{display:block;width:100%;text-align:left;border:none;background:#fff;border-radius:10px;padding:6px 8px;cursor:pointer;font-size:13px;color:var(--text);-webkit-tap-highlight-color:transparent}
+.pg-item.pg-left{background:rgba(255,255,255,.6);border:1.5px dashed #d8cbd0;padding:5px 7px}
+.pg-name{display:block;font-weight:600;line-height:1.25}
+.pg-sub{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.pg-pair{background:none;padding:1px 8px 1px 14px;font-size:12px;color:var(--text)}
+.pg-add{margin-top:auto;align-self:flex-end;width:26px;height:26px;border:none;border-radius:50%;background:#fff;color:var(--app-accent);font-size:15px;line-height:1;cursor:pointer;padding:0}
+.pg-total{font-size:12.5px;color:var(--faint);text-align:center;padding:10px 0 6px}

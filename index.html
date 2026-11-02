@@ -125,8 +125,21 @@
 <div class="pl-act-overlay" id="planActOverlay">
   <div class="pl-act-sheet">
     <div class="pl-act-title" id="planActTitle"></div>
+    <button class="pl-act-btn" id="planActMoveBtn" onclick="planActOpenDest('move')">Move…</button>
+    <button class="pl-act-btn" id="planActCopyBtn" onclick="planActOpenDest('copy')">Copy…</button>
+    <button class="pl-act-btn" id="planActLeftBtn" onclick="planActOpenDest('left')">Copy as leftovers…</button>
     <button class="pl-act-btn danger" id="planActRemoveBtn" onclick="planActRemove()">Remove from plan</button>
     <button class="pl-act-btn" onclick="closePlanAct()">Cancel</button>
+  </div>
+</div>
+
+<!-- Meal planner: where to move or copy an item (day, slot, servings) -->
+<div class="pl-act-overlay" id="planDestOverlay">
+  <div class="pl-act-sheet">
+    <div class="pl-act-title" id="planDestTitle"></div>
+    <div id="planDestBody"></div>
+    <button class="pl-act-btn pl-dest-ok" id="planDestOk" onclick="planDestConfirm()">OK</button>
+    <button class="pl-act-btn" onclick="closePlanDest()">Cancel</button>
   </div>
 </div>
 

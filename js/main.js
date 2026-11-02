@@ -10,6 +10,7 @@ async function init() {
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){
+  if(document.getElementById('planDestOverlay').style.display==='flex'){closePlanDest();return;}
   if(document.getElementById('planActOverlay').style.display==='flex'){closePlanAct();return;}
   if(document.getElementById('planAddOverlay').style.display==='flex'){closePlanAdd();return;}
   if(document.getElementById('pickerOverlay').style.display==='flex'){closePicker();return;}

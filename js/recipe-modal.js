@@ -15,7 +15,7 @@ const modalBody    = document.getElementById('modalBody');
 
 // Hero: name, one muted line (cuisine · course · last cooked) and a soft Servings row
 function renderModalHero(r) {
-  const meta=[r.cuisine,r.course,r.lastCooked?`cooked ${formatDate(r.lastCooked)}`:''].filter(Boolean).join(' · ');
+  const meta=[r.cuisine,r.course,r.lastCooked?`gobbled ${formatDate(r.lastCooked)}`:''].filter(Boolean).join(' · ');
   modalHero.innerHTML=`
     <div class="mh-title">${r.name}</div>
     <div class="mh-sub"><span>${meta}</span><button class="mh-edit-btn" onclick="openEditor(currentRecipe)">Edit</button></div>

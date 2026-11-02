@@ -1,5 +1,6 @@
-// Meal planner (Phase 4, chats 1 and 2a): one file per week in kitchen-data, Recipes | Plan switch,
-// week bar, day buttons, four slots, add a recipe item or a food item, remove, change servings.
+// Meal planner (Phase 4, chats 1, 2a and 2b): one file per week in kitchen-data, Plan view, week bar, day buttons,
+// four slots, add a recipe item or a food item, pairings, leftovers (also from last week's file), remove, change servings,
+// move, copy, copy as leftovers, and the week grid.
 // Week files are saved the safe way: fetch a fresh copy, change only the one item, save, retry if the file changed.
 
 const PLAN_SLOTS = [
@@ -13,7 +14,7 @@ const PLAN_DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const PLAN_DAY_LONG  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
 let planView = 'recipes';      // 'recipes' | 'plan'
-let planMode = 'day';          // 'day' (one day) | 'week' (the seven days as a list)
+let planMode = 'day';          // 'day' (one day) | 'week' (the week grid)
 let planWeekStart = '';        // Monday of the week on screen, YYYY-MM-DD
 let planDay = '';              // the day on screen, YYYY-MM-DD
 let planData = null;           // the week file as loaded (changed on screen straight away, saved a moment later)
@@ -24,6 +25,7 @@ let planPending = 0;           // saves waiting or running
 let planQueue = Promise.resolve();
 const planTimers = {};         // item id -> {t, fn}: servings changes wait 0.8 s so quick taps make one save
 let planNames = [];            // food-name suggestions, built from recipe ingredient names
+let planWeeks = {};            // other weeks' files (read only): Monday date -> week data. Used for leftovers that come from last week
 
 // ── Dates (plain text arithmetic in UTC, so time zones and summer time cannot shift a day) ──
 function planParse(s){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return Date.UTC(+m[1],+m[2]-1,+m[3]);}
@@ -99,7 +101,7 @@ function planSave(ws,applyChange){
       const saved=await planUpdateWithRetry(ws,applyChange);
       planPending--;
       // Once everything is saved, show the file as GitHub now has it (this also picks up the other person's changes)
-      if(planPending===0&&!Object.keys(planTimers).length&&ws===planWeekStart&&planView==='plan'){planData=saved;planRender();}
+      if(planPending===0&&!Object.keys(planTimers).length&&ws===planWeekStart&&planView==='plan'){planData=saved;planRender();planLoadLinked(ws,false);}
       showToast('Plan saved');
     }catch(e){
       planPending--;
@@ -161,6 +163,18 @@ async function planLoad(opts){
     planError=e.message==='NO_TOKEN'?'Tap 🔑 at the top to enter your token.':`Could not load the plan (${e.message}).`;
   }
   planRender();
+  if(planStatus==='ready') planLoadLinked(ws,true);
+}
+// Leftovers that come from another week (Sunday dinner eaten on Monday): read that week's file so "Leftover from Sun dinner" can be shown.
+async function planLoadLinked(ws,force){
+  if(!planData||planData.weekStart!==ws) return;
+  const need=new Set();
+  planEachList(planData,l=>l.forEach(x=>{if(x.leftoverWeek&&x.leftoverWeek!==ws&&(force||!planWeeks[x.leftoverWeek])) need.add(x.leftoverWeek);}));
+  let changed=false;
+  for(const w of need){
+    try{const {data}=await planGetFile(w); planWeeks[w]=data; changed=true;}catch(e){/* keep what is on screen */}
+  }
+  if(changed&&planView==='plan'&&planWeekStart===ws) planRender();
 }
 function planFlushTimers(){
   Object.keys(planTimers).forEach(id=>{const t=planTimers[id];clearTimeout(t.t);t.fn();});
@@ -208,19 +222,31 @@ function planEachList(wk,fn){
     PLAN_SLOTS.forEach(s=>{if(Array.isArray(d[s.key])) fn(d[s.key],date,s.key);});
   }
 }
-// The leftover copies of a recipe item
+// The leftover copies of a recipe item that sit in this week's file (leftovers in another week's file are not counted here)
 function planLeftoversOf(id){
   const out=[];
-  if(planData) planEachList(planData,(l,date,slot)=>l.forEach(x=>{if(x.leftoverOf===id) out.push({item:x,date,slot});}));
+  if(planData) planEachList(planData,(l,date,slot)=>l.forEach(x=>{if(x.leftoverOf===id&&(!x.leftoverWeek||x.leftoverWeek===planWeekStart)) out.push({item:x,date,slot});}));
   return out;
 }
+// Where a leftover comes from: {item,date,slot}, null when the original has been removed, or 'loading' while last week's file is still being read
+function planOriginalOf(it){
+  if(it.leftoverWeek&&it.leftoverWeek!==planWeekStart){
+    const wk=planWeeks[it.leftoverWeek];
+    return wk?(planFindIn(wk,it.leftoverOf)||null):'loading';
+  }
+  return (planData&&planFindIn(planData,it.leftoverOf))||null;
+}
+function planSlotIndex(k){return PLAN_SLOTS.findIndex(s=>s.key===k);}
+// A day and slot as text that sorts in time order, so "earlier" and "later" are a plain comparison
+function planPosKey(date,slot){return date+'|'+planSlotIndex(slot);}
 // An item plus everything that hangs off it (its pairings and its leftover copies, and theirs)
 function planLinkedIds(wk,id){
   const ids=new Set([id]); let grew=true;
   while(grew){
     grew=false;
     planEachList(wk,l=>l.forEach(x=>{
-      if(!ids.has(x.id)&&((x.withItem&&ids.has(x.withItem))||(x.leftoverOf&&ids.has(x.leftoverOf)))){ids.add(x.id);grew=true;}
+      const sameWeek=!x.leftoverWeek||x.leftoverWeek===wk.weekStart;
+      if(!ids.has(x.id)&&((x.withItem&&ids.has(x.withItem))||(x.leftoverOf&&sameWeek&&ids.has(x.leftoverOf)))){ids.add(x.id);grew=true;}
     }));
   }
   return ids;
@@ -236,8 +262,8 @@ function planItemHTML(it){
     const isLeft=!!it.leftoverOf;
     let sub='';
     if(isLeft){
-      const o=planData&&planFindIn(planData,it.leftoverOf);
-      sub=o?`Leftover from ${planWhen(o.date,o.slot)}`:'Leftover';
+      const o=planOriginalOf(it);
+      sub=o==='loading'?'Leftover':o?`Leftover from ${planWhen(o.date,o.slot)}`:'Leftover · original removed';
     }else{
       const lefts=planLeftoversOf(it.id);
       if(lefts.length){
@@ -284,29 +310,39 @@ function planSlotHTML(s,day){
     ${list.length?planGroups(list).map(g=>planItemHTML(g.main)+g.pairs.map(planPairHTML).join('')).join(''):'<div class="pl-empty">Nothing planned</div>'}
   </div>`;
 }
-// Week mode: the seven days as a short list (tap a day to open it). The Mac week grid replaces this in the next chat.
-function planBrief(list){
-  return planGroups(list).map(g=>{
-    const it=g.main;
-    let t;
-    if(it.type==='recipe'){const r=planRecipeOf(it); t=(it.leftoverOf?'Leftover: ':'')+(r?r.name:'…')+` (${parseInt(it.servings)||PLAN_DEFAULT_SERVINGS})`;}
-    else{const a=planAmount(it); t=(it.name||'')+(a?` (${a})`:'');}
-    g.pairs.forEach(p=>{const a=planAmount(p); t+=`, with ${p.name||''}`+(a?` (${a})`:'');});
-    return t;
-  }).join('; ');
+// Week mode: the week grid. Seven day columns, the four slots as rows, a Day total row (still "— kcal").
+// Same code on every screen; on a narrow screen it keeps a minimum column width and scrolls sideways.
+function planGridItem(it,pairs){
+  const n=parseInt(it.servings)||PLAN_DEFAULT_SERVINGS;
+  let name,sub='',left=false;
+  if(it.type==='recipe'){
+    const r=planRecipeOf(it);
+    name=r?r.name:(recipes.length?'Recipe no longer exists':'Loading recipes…');
+    left=!!it.leftoverOf;
+    sub=left?`Leftover · ${n}`:`${n} servings`;
+  }else{
+    name=it.name||''; sub=planAmount(it);
+  }
+  return `<button class="pg-item${left?' pg-left':''}" onclick="planOpenAct('${it.id}')"><span class="pg-name">${esc(name)}</span>${sub?`<span class="pg-sub">${esc(sub)}</span>`:''}</button>`
+    +pairs.map(p=>{const a=planAmount(p);return `<button class="pg-pair" onclick="planOpenAct('${p.id}')"><span class="pl-pair-with">with</span> ${esc(p.name||'')}${a?` · ${esc(a)}`:''}</button>`;}).join('');
+}
+function planGridCell(date,s){
+  const day=planData.days[date], list=(day&&day[s.key])||[];
+  return `<div class="pg-cell">${planGroups(list).map(g=>planGridItem(g.main,g.pairs)).join('')}
+    <button class="pg-add" onclick="openPlanAdd('${s.key}',{date:'${date}'})" aria-label="Add to ${s.label} on ${planDayLabel(date)}">＋</button></div>`;
 }
 function planWeekHTML(){
-  const today=todayStr();
-  return PLAN_DAY_SHORT.map((nm,i)=>{
-    const date=planAddDays(planWeekStart,i), d=new Date(planParse(date)), day=planData.days[date];
-    const lines=PLAN_SLOTS.map(s=>{
-      const list=(day&&day[s.key])||[];
-      return list.length?`<div class="pl-wk-line"><span class="pl-wk-slot">${s.label}</span><span class="pl-wk-txt">${esc(planBrief(list))}</span></div>`:'';
-    }).join('');
-    return `<button class="pl-wk-day" onclick="planOpenDay('${date}')">
-      <div class="pl-wk-hdr">${nm} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}${date===today?' <span class="pl-wk-today">Today</span>':''}</div>
-      ${lines||'<div class="pl-wk-none">Nothing planned</div>'}</button>`;
-  }).join('');
+  const today=todayStr(), dates=PLAN_DAY_SHORT.map((nm,i)=>planAddDays(planWeekStart,i));
+  let h='<div class="pg-scroll"><div class="pg-grid"><div class="pg-corner"></div>';
+  dates.forEach((date,i)=>{
+    const d=new Date(planParse(date));
+    h+=`<button class="pg-dayhead${date===today?' today':''}" onclick="planOpenDay('${date}')"><span>${PLAN_DAY_SHORT[i]}</span><b>${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}</b></button>`;
+  });
+  PLAN_SLOTS.forEach(s=>{
+    h+=`<div class="pg-rowlbl">${s.label}</div>`+dates.map(date=>planGridCell(date,s)).join('');
+  });
+  h+='<div class="pg-rowlbl">Day total</div>'+dates.map(()=>'<div class="pg-total">— kcal</div>').join('');
+  return h+'</div></div>';
 }
 function planOpenDay(date){planDay=date;planMode='day';planRender();}
 function planRender(){
@@ -338,7 +374,9 @@ function planRender(){
     h+=PLAN_SLOTS.map(s=>planSlotHTML(s,day)).join('');
     h+='<div class="pl-total"><span>Day total</span><span>— kcal</span></div>';
   }
+  const sc=el.querySelector('.pg-scroll'), keepX=sc?sc.scrollLeft:0;
   el.innerHTML=h;
+  const sc2=el.querySelector('.pg-scroll'); if(sc2&&keepX) sc2.scrollLeft=keepX;
 }
 function planOpenRecipe(id){
   const f=planData&&planFindIn(planData,id), r=f&&planRecipeOf(f.item);
@@ -391,6 +429,11 @@ function planOpenAct(id){
   planActId=id;
   const r=f.item.type==='recipe'?planRecipeOf(f.item):null;
   document.getElementById('planActTitle').textContent=f.item.type==='recipe'?(r?r.name:'Recipe'):(f.item.name||'Food');
+  const isPair=!!f.item.withItem&&f.list.some(x=>x.id===f.item.withItem);   // a pairing travels with its main item
+  const isLeft=f.item.type==='recipe'&&!!f.item.leftoverOf;
+  document.getElementById('planActMoveBtn').style.display=isPair?'none':'';
+  document.getElementById('planActCopyBtn').style.display=isPair?'none':'';
+  document.getElementById('planActLeftBtn').style.display=(f.item.type==='recipe'&&!isLeft&&r)?'':'none';
   const extra=planLinkedIds(planData,id).size-1;
   document.getElementById('planActRemoveBtn').textContent=extra?`Remove from plan (and ${extra} linked ${extra===1?'item':'items'})`:'Remove from plan';
   document.getElementById('planActOverlay').style.display='flex';
@@ -398,21 +441,134 @@ function planOpenAct(id){
 function closePlanAct(){document.getElementById('planActOverlay').style.display='none';planActId=null;}
 function planActRemove(){const id=planActId;closePlanAct();if(id)planRemoveItem(id);}
 
+// ── Move, Copy, Copy as leftovers (agreed 2 Nov) ──
+// Move: pairings travel with their main item; leftovers stay where they are (their "Leftover from…" label follows the original);
+//   an original cannot move to a time on or after one of its leftovers; a leftover cannot move to or before its original.
+// All three stay inside the week on screen (moving to another week would mean saving two files at once).
+let planDest=null;   // {mode:'move'|'copy'|'left', id, date, slot, servings, err}
+function planFreshId(wk){
+  let id; do{ id='i-'+Math.random().toString(36).slice(2,7); }while(planFindIn(wk,id));
+  return id;
+}
+function planActOpenDest(mode){
+  const id=planActId, f=id&&planData&&planFindIn(planData,id); if(!f) return;
+  closePlanAct();
+  let date=f.date, slot=f.slot;
+  if(mode==='left'){                       // suggest the next slot after the original
+    const k=planSlotIndex(f.slot)+1;
+    if(k<PLAN_SLOTS.length){slot=PLAN_SLOTS[k].key;}
+    else{slot=PLAN_SLOTS[0].key; date=planAddDays(f.date,1);}
+    if(date>planAddDays(planWeekStart,6)){date=planAddDays(planWeekStart,6);slot=PLAN_SLOTS[PLAN_SLOTS.length-1].key;}
+  }else if(mode==='copy'){date=planDay;}
+  planDest={mode,id,date,slot,servings:parseInt(f.item.servings)||PLAN_DEFAULT_SERVINGS,err:''};
+  if(mode==='left') planDest.servings=PLAN_DEFAULT_SERVINGS;
+  planDestBuild();
+  document.getElementById('planDestOverlay').style.display='flex';
+}
+function closePlanDest(){document.getElementById('planDestOverlay').style.display='none';planDest=null;}
+function planDestSet(k,v){if(!planDest) return; planDest[k]=v; planDest.err=''; planDestBuild();}
+function planDestServ(d){if(!planDest) return; planDest.servings=Math.min(99,Math.max(1,planDest.servings+d)); planDestBuild();}
+function planDestBuild(){
+  const D=planDest, f=D&&planData&&planFindIn(planData,D.id);
+  if(!f){closePlanDest();return;}
+  document.getElementById('planDestTitle').textContent={move:'Move to…',copy:'Copy to…',left:'Copy as leftovers to…'}[D.mode];
+  const days=PLAN_DAY_SHORT.map((n,i)=>{const d=planAddDays(planWeekStart,i);return `<option value="${d}"${d===D.date?' selected':''}>${esc(planDayLabel(d))}</option>`;}).join('');
+  const slots=PLAN_SLOTS.map(sl=>`<option value="${sl.key}"${sl.key===D.slot?' selected':''}>${sl.label}</option>`).join('');
+  const showServ=D.mode!=='move'&&f.item.type==='recipe';
+  document.getElementById('planDestBody').innerHTML=`<div class="pl-dest-row"><span class="pl-foot-lbl">Day</span><select class="pl-with-sel" onchange="planDestSet('date',this.value)">${days}</select></div>
+    <div class="pl-dest-row"><span class="pl-foot-lbl">Slot</span><select class="pl-with-sel" onchange="planDestSet('slot',this.value)">${slots}</select></div>
+    ${showServ?`<div class="pl-dest-row"><span class="pl-foot-lbl">Servings</span><div class="pl-foot-step">
+      <button class="pl-step-btn" onclick="planDestServ(-1)" ${D.servings<=1?'disabled':''} aria-label="Fewer servings">−</button>
+      <span class="pl-step-val">${D.servings}</span>
+      <button class="pl-step-btn" onclick="planDestServ(1)" ${D.servings>=99?'disabled':''} aria-label="More servings">+</button></div></div>`:''}
+    ${D.err?`<div class="pl-dest-err">${esc(D.err)}</div>`:''}`;
+  document.getElementById('planDestOk').textContent={move:'Move',copy:'Copy',left:'Copy as leftovers'}[D.mode];
+}
+// Returns text saying why the choice is not allowed, or '' when it is fine
+function planDestCheck(){
+  const D=planDest, f=planData&&planFindIn(planData,D.id); if(!f) return 'That item is gone.';
+  const newPos=planPosKey(D.date,D.slot);
+  if(D.mode==='move'&&D.date===f.date&&D.slot===f.slot) return 'It is already there. Pick another day or slot.';
+  if(D.mode==='left'){
+    if(newPos<=planPosKey(f.date,f.slot)) return `Leftovers have to come after the meal they come from (${planWhen(f.date,f.slot)}).`;
+    return '';
+  }
+  if(f.item.type==='recipe'&&f.item.leftoverOf){                       // a leftover cannot sit on or before its original
+    const o=planOriginalOf(f.item);
+    if(o&&o!=='loading'&&(!f.item.leftoverWeek||f.item.leftoverWeek===planWeekStart)&&newPos<=planPosKey(o.date,o.slot))
+      return `A leftover has to come after its original (${planWhen(o.date,o.slot)}).`;
+  }
+  if(D.mode==='move'){                                                  // an original cannot move on or after its leftovers
+    const lefts=planLeftoversOf(D.id).filter(l=>newPos>=planPosKey(l.date,l.slot)).sort((a,b)=>planPosKey(a.date,a.slot)<planPosKey(b.date,b.slot)?-1:1);
+    if(lefts.length) return `Can't move it there: its leftovers are on ${planWhen(lefts[0].date,lefts[0].slot)}. A meal has to come before its leftovers.`;
+  }
+  return '';
+}
+function planDestConfirm(){
+  const D=planDest; if(!D) return;
+  const err=planDestCheck();
+  if(err){D.err=err;planDestBuild();return;}
+  const ws=planWeekStart, id=D.id, date=D.date, slot=D.slot, servings=D.servings, mode=D.mode;
+  closePlanDest();
+  if(mode==='move'){
+    const apply=wk=>{
+      const g=planFindIn(wk,id); if(!g) return false;
+      if(g.date===date&&g.slot===slot) return false;
+      const moving=[g.item,...g.list.filter(x=>x.withItem===id)];
+      moving.forEach(x=>{const i=g.list.indexOf(x); if(i!==-1) g.list.splice(i,1);});
+      planDayOf(wk,date)[slot].push(...moving);
+    };
+    apply(planData); planRender(); planSave(ws,apply);
+  }else if(mode==='copy'){
+    const src=planFindIn(planData,id); if(!src) return;
+    const newId=planNewId(), pairIds={};
+    src.list.filter(x=>x.withItem===id).forEach(p=>{pairIds[p.id]=planNewId();});
+    const apply=wk=>{
+      const g=planFindIn(wk,id); if(!g) return false;
+      const target=planDayOf(wk,date)[slot];
+      if(target.some(x=>x.id===newId)) return false;                    // this copy is already saved
+      const main=JSON.parse(JSON.stringify(g.item)); main.id=newId; delete main.withItem;
+      if(main.type==='recipe') main.servings=servings;
+      const out=[main];
+      g.list.filter(x=>x.withItem===id).forEach(p=>{
+        const c=JSON.parse(JSON.stringify(p)); c.id=pairIds[p.id]||planFreshId(wk); c.withItem=newId; out.push(c);
+      });
+      target.push(...out);
+    };
+    apply(planData); planRender(); planSave(ws,apply);
+  }else{
+    const src=planFindIn(planData,id); if(!src) return;
+    planAddItem(date,slot,{id:planNewId(),type:'recipe',recipeId:Number(src.item.recipeId),servings,leftoverOf:id});
+  }
+  if(date!==planDay&&planMode==='day'){planDay=date;planRender();}     // follow the item to its new day
+  showToast({move:'Moved',copy:'Copied',left:'Leftovers added'}[mode]);
+}
+
 // ── The Add sheet (Recipe tab and Food tab) ──
 let planAddSlot='dinner', planAddDate='', planAddTab='recipe', planAddRecipeId=null, planAddServings=PLAN_DEFAULT_SERVINGS, planSuggest=[];
-let planAddLeft=false, planAddOrig=null, planAddWithOn=false, planAddWithId='', planAddMains=[];
+let planAddLeft=false, planAddOrig=null, planAddOrigWeek='', planAddWithOn=false, planAddWithId='', planAddMains=[];
 function planSlotLabel(k){return (PLAN_SLOTS.find(s=>s.key===k)||{}).label||k;}
 function openPlanAdd(slot,opts){
   if(!planData) return;
   opts=opts||{};
   planAddSlot=slot; planAddDate=opts.date||planDay; planAddTab=opts.tab||'recipe'; planAddRecipeId=null; planAddServings=PLAN_DEFAULT_SERVINGS;
-  planAddLeft=false; planAddOrig=null; planAddWithOn=!!opts.withId; planAddWithId=opts.withId||'';
+  planAddLeft=false; planAddOrig=null; planAddOrigWeek=''; planAddWithOn=!!opts.withId; planAddWithId=opts.withId||'';
   const seen=new Map();
   Object.values(ingredients).forEach(list=>list.forEach(i=>{const n=(i.name||'').trim(); if(n&&!seen.has(n.toLowerCase())) seen.set(n.toLowerCase(),n);}));
   planNames=[...seen.values()].sort((a,b)=>a.localeCompare(b));
   document.getElementById('planAddTitle').textContent=`Add to ${planSlotLabel(slot)}`;
   planAddBuild();
   document.getElementById('planAddOverlay').style.display='flex';
+  planLoadPrevForAdd();
+}
+// On a Monday, last week's meals can be the source of leftovers (Sunday dinner eaten on Monday): read last week's file, then redraw the sheet
+async function planLoadPrevForAdd(){
+  if(planDow(planAddDate)!==0) return;
+  const prev=planAddDays(planWeekStart,-7);
+  try{
+    const {data}=await planGetFile(prev); planWeeks[prev]=data;
+    if(document.getElementById('planAddOverlay').style.display==='flex'&&planAddTab==='recipe') planAddBuild();
+  }catch(e){/* offer this week's meals only */}
 }
 // "＋ Add a side or pairing" under a recipe item: opens the Food tab with "with <that recipe>" ticked
 function planAddSide(id){
@@ -423,16 +579,25 @@ function closePlanAdd(){document.getElementById('planAddOverlay').style.display=
 function planAddSwitch(tab){planAddTab=tab;planAddBuild();}
 // Meals already planned that these leftovers could come from: recipe items (not leftovers) on an earlier day or an earlier slot of the same day
 function planAddCandidates(){
-  const out=[], si=PLAN_SLOTS.findIndex(s=>s.key===planAddSlot);
+  const out=[], si=planSlotIndex(planAddSlot);
   planEachList(planData,(l,date,slot)=>{
-    const k=PLAN_SLOTS.findIndex(s=>s.key===slot);
+    const k=planSlotIndex(slot);
     if(!(date<planAddDate||(date===planAddDate&&k<si))) return;
     l.forEach(x=>{
       if(x.type!=='recipe'||x.leftoverOf) return;
       const r=planRecipeOf(x); if(!r) return;
-      out.push({id:x.id,name:r.name,date,k,when:`${planWhen(date,slot)} · ${parseInt(x.servings)||PLAN_DEFAULT_SERVINGS} servings`});
+      out.push({id:x.id,week:planWeekStart,name:r.name,date,k,when:`${planWhen(date,slot)} · ${parseInt(x.servings)||PLAN_DEFAULT_SERVINGS} servings`});
     });
   });
+  // Monday: last week's meals too (only the previous week, never older)
+  const prev=planAddDays(planWeekStart,-7), pw=planWeeks[prev];
+  if(planDow(planAddDate)===0&&pw){
+    planEachList(pw,(l,date,slot)=>l.forEach(x=>{
+      if(x.type!=='recipe'||x.leftoverOf) return;
+      const r=planRecipeOf(x); if(!r) return;
+      out.push({id:x.id,week:prev,name:r.name,date,k:planSlotIndex(slot),when:`${planWhen(date,slot)} last week · ${parseInt(x.servings)||PLAN_DEFAULT_SERVINGS} servings`});
+    }));
+  }
   out.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:b.k-a.k);   // most recent first
   return out;
 }
@@ -443,10 +608,10 @@ function planAddBuild(){
   if(planAddTab==='recipe'){
     const cands=planAddCandidates();
     if(!cands.length) planAddLeft=false;
-    if(planAddLeft&&!cands.some(c=>c.id===planAddOrig)) planAddOrig=cands[0]?cands[0].id:null;
+    if(planAddLeft&&!cands.some(c=>c.id===planAddOrig&&c.week===planAddOrigWeek)){planAddOrig=cands[0]?cands[0].id:null;planAddOrigWeek=cands[0]?cands[0].week:'';}
     let h=cands.length?`<label class="pl-check"><input type="checkbox" ${planAddLeft?'checked':''} onchange="planLeftToggle(this.checked)"><span>These are leftovers from a meal I already planned</span></label>`:'';
     if(planAddLeft){
-      h+=`<div class="pk-list">${cands.map(c=>`<button class="pk-item${c.id===planAddOrig?' sel':''}" onclick="planPickOrig('${c.id}')"><span>${esc(c.name)}<span class="pl-cand-sub">${esc(c.when)}</span></span>${c.id===planAddOrig?'<span class="cur">✓</span>':''}</button>`).join('')}</div>`;
+      h+=`<div class="pk-list">${cands.map(c=>`<button class="pk-item${(c.id===planAddOrig&&c.week===planAddOrigWeek)?' sel':''}" onclick="planPickOrig('${c.id}','${c.week}')"><span>${esc(c.name)}<span class="pl-cand-sub">${esc(c.when)}</span></span>${(c.id===planAddOrig&&c.week===planAddOrigWeek)?'<span class="cur">✓</span>':''}</button>`).join('')}</div>`;
     }else{
       h+=`<div style="padding-top:12px"><input class="pk-search" id="planRecipeSearch" name="plan-recipe-search" type="text" autocomplete="off" placeholder="Search recipes…" oninput="planAddRecipeList()"></div>
       <div class="pk-list" id="planRecipeList"></div>`;
@@ -473,7 +638,7 @@ function planAddBuild(){
   }
 }
 function planLeftToggle(on){planAddLeft=on;planAddBuild();}
-function planPickOrig(id){planAddOrig=id;planAddBuild();}
+function planPickOrig(id,week){planAddOrig=id;planAddOrigWeek=week||planWeekStart;planAddBuild();}
 function planAddRecipeList(){
   const q=(document.getElementById('planRecipeSearch')||{value:''}).value.toLowerCase().trim();
   const list=recipes.filter(r=>!q||r.name.toLowerCase().includes(q)).slice().sort((a,b)=>a.name.localeCompare(b.name));
@@ -496,8 +661,11 @@ function planAddFootRecipe(){
 function planAddServ(d){planAddServings=Math.min(99,Math.max(1,planAddServings+d));planAddFootRecipe();}
 function planSubmitRecipe(){
   if(planAddLeft){
-    const o=planAddOrig&&planFindIn(planData,planAddOrig); if(!o) return;
-    planAddItem(planAddDate,planAddSlot,{id:planNewId(),type:'recipe',recipeId:Number(o.item.recipeId),servings:planAddServings,leftoverOf:planAddOrig});
+    const wk=planAddOrigWeek===planWeekStart?planData:planWeeks[planAddOrigWeek];
+    const o=planAddOrig&&wk&&planFindIn(wk,planAddOrig); if(!o) return;
+    const item={id:planNewId(),type:'recipe',recipeId:Number(o.item.recipeId),servings:planAddServings,leftoverOf:planAddOrig};
+    if(planAddOrigWeek!==planWeekStart) item.leftoverWeek=planAddOrigWeek;      // the original is in last week's file
+    planAddItem(planAddDate,planAddSlot,item);
     closePlanAdd(); return;
   }
   if(planAddRecipeId===null) return;
@@ -543,6 +711,7 @@ function planSubmitFood(){
 
 document.getElementById('planAddOverlay').addEventListener('click',e=>{if(e.target.id==='planAddOverlay')closePlanAdd();});
 document.getElementById('planActOverlay').addEventListener('click',e=>{if(e.target.id==='planActOverlay')closePlanAct();});
+document.getElementById('planDestOverlay').addEventListener('click',e=>{if(e.target.id==='planDestOverlay')closePlanDest();});
 
 // ── Moving between weeks: swipe the day strip (touch, mouse drag or trackpad), or the left and right arrow keys ──
 (function(){
@@ -576,7 +745,7 @@ document.getElementById('planActOverlay').addEventListener('click',e=>{if(e.targ
     const tag=(document.activeElement&&document.activeElement.tagName)||'';
     if(/INPUT|TEXTAREA|SELECT/.test(tag)) return;
     if(document.querySelector('.modal-overlay.open')) return;
-    if(['planAddOverlay','planActOverlay','editorOverlay','filterOverlay','pickerOverlay'].some(id=>{const o=document.getElementById(id);return o&&o.style.display==='flex';})) return;
+    if(['planAddOverlay','planActOverlay','planDestOverlay','editorOverlay','filterOverlay','pickerOverlay'].some(id=>{const o=document.getElementById(id);return o&&o.style.display==='flex';})) return;
     planShiftWeek(e.key==='ArrowRight'?1:-1);
   });
 })();
