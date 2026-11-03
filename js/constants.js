@@ -22,6 +22,13 @@ const CATEGORIES = ['Beans / Lentils','Biryani','Bowl','Burger','Cake','Cocktail
 // Fixed list of units for the ingredient editor dropdown. Add new ones here if you need them.
 const UNITS = ['g','kg','ml','l','tsp','tbsp','cup','clove','piece','serving','pinch','dash','bunch','sprig','slice','can'];
 const CAT_ORDER  = ['Vegetables','Legumes/Dals','Grains/Flour','Dairy','Nuts/Coconut','Spices (Powder)','Spices (Whole/Seeds)','Fresh Aromatics','Oils/Fats','Alcohol/Cocktail','Citrus/Acid','Liquids','Fruits','Salt/Seasonings','Other'];
+// Colour of the line (and the name) of each ingredient category in the recipe pop-up. A category that is not in the list uses the "Other" grey.
+const CAT_COLORS = {
+  'Vegetables':'#3b6d11', 'Legumes/Dals':'#a0652a', 'Grains/Flour':'#c9a14a', 'Dairy':'#6d8fd6', 'Nuts/Coconut':'#8a5a3c',
+  'Spices (Powder)':'#d2641e', 'Spices (Whole/Seeds)':'#9c3a2e', 'Fresh Aromatics':'#20a080', 'Oils/Fats':'#d9a82b',
+  'Alcohol/Cocktail':'#7f77dd', 'Citrus/Acid':'#9aa51e', 'Liquids':'#4f86a8', 'Fruits':'#c04080', 'Salt/Seasonings':'#7a7a7a', 'Other':'#a89d9a'
+};
+function catColor(cat){return CAT_COLORS[cat]||CAT_COLORS['Other'];}
 
 const ICON_LINK='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
 

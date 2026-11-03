@@ -207,8 +207,80 @@ function planShowWeek(){planMode='week';planRender();}
 function planRefresh(){planLoad({silent:true}).then(()=>{if(planStatus==='ready')showToast('Plan refreshed');});}
 // Coming back to the app (for example from the home screen) refreshes the plan if it is on screen
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&planView==='plan'&&planPending===0&&!Object.keys(planTimers).length) planLoad({silent:true});
+  if(document.hidden) return;
+  if(planView==='plan'&&planPending===0&&!Object.keys(planTimers).length) planLoad({silent:true});
+  planScanGobbled();
 });
+
+// ── F17: "gobbled" dates come from the plan ──
+// Today's recipe items (not leftovers) get a small tick: tap it to record the recipe as gobbled today.
+function planGobbleHTML(it,r,date){
+  if(it.leftoverOf||date!==todayStr()) return '';
+  if(r.lastCooked&&r.lastCooked>=date) return `<span class="pl-gob done">✓ Gobbled</span>`;
+  return `<button class="pl-gob" onclick="event.stopPropagation();planMarkGobbled('${it.id}')">✓ Gobbled today?</button>`;
+}
+let gobbleBusy=false;
+async function planMarkGobbled(itemId){
+  const f=planData&&planFindIn(planData,itemId);
+  if(!f||f.item.type!=='recipe'||f.item.leftoverOf||gobbleBusy) return;
+  if(!localStorage.getItem('gh_pat_token')){showToast('Tap the key icon to enter your token');return;}
+  const id=String(f.item.recipeId), day=todayStr();
+  gobbleBusy=true; showToast('Saving…');
+  try{
+    await ghUpdateWithRetry(raw=>{
+      const rr=raw.recipes.find(x=>String(x.id)===id);
+      if(!rr) throw new Error('Recipe not found in the file');
+      if(!rr.lastCooked||rr.lastCooked<day) rr.lastCooked=day;      // only ever a newer date
+    });
+    applyLastCookedLocal(id,day); applyFilters(); planRender(); showToast('Gobbled ✓');
+  }catch(e){ showToast('Save failed: '+e.message); }
+  finally{ gobbleBusy=false; }
+}
+// When the app opens (and when you come back to it on a new day): every recipe item on a day BEFORE today sets that recipe's
+// lastCooked to that day, but only if that day is newer than the date already stored. Leftovers never count.
+// It reads this week's and last week's plan files (further back if the app was not opened for a while, never more than 8 weeks)
+// and saves all the changes in one go. It is safe to repeat: the same plan always gives the same result.
+let gobbleScanDay='';
+async function planScanGobbled(){
+  const today=todayStr();
+  if(gobbleScanDay===today||!recipes.length||!localStorage.getItem('gh_pat_token')) return;
+  gobbleScanDay=today;
+  try{
+    const thisMon=planMonday(today);
+    let from=planAddDays(thisMon,-7);
+    const done=localStorage.getItem('gobble_scanned_to')||'';             // the last day that was fully read
+    if(/^\d{4}-\d{2}-\d{2}$/.test(done)&&planMonday(done)<from) from=planMonday(done);
+    const oldest=planAddDays(thisMon,-56); if(from<oldest) from=oldest;
+    const found={};                                                       // recipe id -> newest day before today
+    for(let ws=from;ws<=thisMon;ws=planAddDays(ws,7)){
+      const {data}=await planGetFile(ws);
+      planEachList(data,(list,date)=>{
+        if(date>=today) return;
+        list.forEach(it=>{
+          if(it.type!=='recipe'||it.leftoverOf) return;
+          const id=String(it.recipeId);
+          if(!found[id]||found[id]<date) found[id]=date;
+        });
+      });
+    }
+    const updates=Object.keys(found).filter(id=>{const r=recipes.find(x=>String(x.id)===id);return r&&(!r.lastCooked||r.lastCooked<found[id]);});
+    if(updates.length){
+      await ghUpdateWithRetry(raw=>{
+        updates.forEach(id=>{
+          const rr=raw.recipes.find(x=>String(x.id)===id);
+          if(rr&&(!rr.lastCooked||rr.lastCooked<found[id])) rr.lastCooked=found[id];
+        });
+      });
+      updates.forEach(id=>applyLastCookedLocal(id,found[id]));
+      applyFilters(); if(planView==='plan') planRender();
+      showToast(updates.length===1?'1 gobbled date updated from the plan':`${updates.length} gobbled dates updated from the plan`);
+    }
+    localStorage.setItem('gobble_scanned_to',planAddDays(today,-1));
+  }catch(e){
+    console.error('Gobbled scan failed:',e);
+    gobbleScanDay='';                                                     // try again next time the app is opened or revisited
+  }
+}
 
 // ── Drawing the day view ──
 function planAmount(it){
@@ -253,7 +325,7 @@ function planLinkedIds(wk,id){
 }
 function planWhen(date,slot){return `${PLAN_DAY_SHORT[planDow(date)]} ${planSlotLabel(slot).toLowerCase()}`;}
 
-function planItemHTML(it){
+function planItemHTML(it,date){
   if(it.type==='recipe'){
     const r=planRecipeOf(it), n=parseInt(it.servings)||PLAN_DEFAULT_SERVINGS;
     if(!r) return `<div class="pl-item">
@@ -274,7 +346,7 @@ function planItemHTML(it){
     return `<div class="pl-item${isLeft?' pl-left':''}">
       <div class="pl-main" onclick="planOpenRecipe('${it.id}')"><div class="pl-name">${esc(r.name)}</div>
         ${sub?`<div class="pl-sub">${esc(sub)}</div>`:''}
-        <button class="pl-side-link" onclick="event.stopPropagation();planAddSide('${it.id}')">＋ Add a side or pairing</button></div>
+        <button class="pl-side-link" onclick="event.stopPropagation();planAddSide('${it.id}')">＋ Add a side or pairing</button>${planGobbleHTML(it,r,date)}</div>
       <div class="pl-step"><div class="pl-step-row">
         <button class="pl-step-btn" onclick="planChangeServings('${it.id}',-1)" ${n<=1?'disabled':''} aria-label="Fewer servings">−</button>
         <span class="pl-step-val">${n}</span>
@@ -307,7 +379,7 @@ function planSlotHTML(s,day){
   return `<div class="pl-slot">
     <div class="pl-slot-hdr"><span class="pl-slot-name">${s.label}</span>
       <button class="pl-add" onclick="openPlanAdd('${s.key}')" aria-label="Add to ${s.label}">＋</button></div>
-    ${list.length?planGroups(list).map(g=>planItemHTML(g.main)+g.pairs.map(planPairHTML).join('')).join(''):'<div class="pl-empty">Nothing planned</div>'}
+    ${list.length?planGroups(list).map(g=>planItemHTML(g.main,planDay)+g.pairs.map(planPairHTML).join('')).join(''):'<div class="pl-empty">Nothing planned</div>'}
   </div>`;
 }
 // Week mode: the week grid. Seven day columns, the four slots as rows, a Day total row (still "— kcal").

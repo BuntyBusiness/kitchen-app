@@ -43,3 +43,12 @@ function applyLocalUpdate(built){
   rawNutrition[id]=built.nutrition||{};
   rawRecipeMap[id]=built;
 }
+
+// Sets a recipe's lastCooked on what is on screen (after it has been saved to GitHub). Changes the existing objects in place,
+// so a recipe pop-up that is open sees the new date too.
+function applyLastCookedLocal(id,dateStr){
+  const r=recipes.find(x=>String(x.id)===String(id));
+  if(r) r.lastCooked=dateStr;
+  const raw=rawRecipeMap[parseInt(id)];
+  if(raw) raw.lastCooked=dateStr;
+}

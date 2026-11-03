@@ -66,15 +66,14 @@ function renderIngredientsTab(r, scale) {
   });
   const ingHTML=sortedCats.length
     ?sortedCats.map(cat=>`
-      <div class="ing-cat">
-        <div class="ing-cat-name">${cat}</div>
+      <div class="ing-cat" style="--cc:${catColor(cat)}">
+        <div class="ing-cat-name">${esc(cat)}</div>
         <ul class="ing-list">
           ${byCat[cat].map(item=>{
             const sq=(scale!==1&&item.rawQty!==null)?scaleQty(item.rawQty,item.unit,scale):item.qty;
             const cls=checkedIngredients.has(item.idx)?' checked':'';
             const sub=item.recipeId!==null&&item.recipeId!==undefined?recipes.find(x=>x.id===item.recipeId):null;
             return `<li class="ing-row${cls}${sub?' linked':''}" data-idx="${item.idx}" onclick="toggleIngredient(${item.idx})">
-              <span class="ing-tick" aria-hidden="true"></span>
               <span class="ing-qty">${sq||'—'}</span>
               <span class="ing-name">${item.name}</span>
               ${sub?`<button class="ing-open" aria-label="Open ${esc(sub.name)}" onclick="event.stopPropagation();openSubRecipe(${sub.id})">${ICON_LINK}</button>`:''}
@@ -106,8 +105,8 @@ function renderMethodTab(r) {
     </div>`;
 }
 
-// Last gobbled: label, date, clear and the gobble button (Pac-Man) on one row, inside the recipe pop-up
-const ICON_GOBBLE='<svg width="30" height="26" viewBox="0 0 28 24" aria-hidden="true"><path d="M11 12 19.2 6.3A10 10 0 1 0 19.2 17.7Z" fill="#f4b400"/><circle cx="10.5" cy="7.2" r="1.4" fill="#2a2224"/><circle cx="24.6" cy="12" r="1.7" fill="#e07a5f"/></svg>';
+// Last gobbled: label, date, clear and the gobble button (a hungry round face with crumbs flying out) on one row, inside the recipe pop-up
+const ICON_GOBBLE='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="12" r="7.5"/><circle cx="9" cy="8.9" r=".7" fill="currentColor"/><path d="M5.8 13.4h9.4c0 3-2.1 4.7-4.7 4.7s-4.7-1.7-4.7-4.7z"/><path d="M8.6 16.7c.5-1 1.4-1.4 1.9-1.4s1.4.4 1.9 1.4"/><path d="M19 6.4l1.5-.8M21.2 11l1.4.3M19.4 16.8l1.2 1"/></svg>';
 function renderCookedRow(r){
   const d=r.lastCooked||'';
   return `<span class="cooked-lbl">Last Gobbled</span>

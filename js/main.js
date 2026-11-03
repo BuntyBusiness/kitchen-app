@@ -7,6 +7,7 @@ async function init() {
   renderCourseBar();
   renderCards(recipes);
   if(typeof planView!=='undefined'&&planView==='plan') planRender();   // Plan was opened before the recipes arrived
+  planScanGobbled();                                                    // F17: gobbled dates from the plan
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){
